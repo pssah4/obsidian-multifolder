@@ -105,6 +105,12 @@ export interface MountPoint {
 	encryptedSftpPassphrase?: string;
 	/** TRANSIENT — carries the raw passphrase from the modal. Never persisted. */
 	sftpPassphrase?: string;
+	/**
+	 * Pinned SHA256 fingerprint of the server's host key ("SHA256:...").
+	 * Recorded on the first successful connection and checked on every later
+	 * one, so a substituted server is refused. Not a secret; safe to sync.
+	 */
+	sftpHostKeyFingerprint?: string;
 	/** Runtime-only source path when this mount is generated from a TOC config file. */
 	tocSourcePath?: string;
 }

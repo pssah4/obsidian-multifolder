@@ -1,7 +1,7 @@
 import { App, ButtonComponent, Modal, Notice, Platform, Setting, SuggestModal, TFolder, TextComponent, normalizePath } from 'obsidian';
 import { MountPoint, MountStatus, MountType } from '../types';
 import { SecurityManager } from '../SecurityManager';
-import { checkPathAccessible, isDirectory, getPlatform, isWSL } from '../OSHelpers';
+import { checkPathAccessible, isDirectory, getPlatform, isWSL, classifyRemoteUrl } from '../OSHelpers';
 import { logger } from '../logger';
 import { getRuntimeRequire, loadOptionalNodeModule } from '../runtimeNode';
 import { SubmitStateController } from './SubmitStateController';
@@ -1035,6 +1035,17 @@ export class MountManagerModal extends Modal {
 				new Notice(`${this.pluginName}: S3 access key ID is required.`);
 				return;
 			}
+			// A custom endpoint carries the access key over the wire, so it is held
+			// to the same transport rule as the WebDAV URL.
+			if (this.s3Endpoint) {
+				const endpointCheck = classifyRemoteUrl(this.s3Endpoint);
+				if (!endpointCheck.ok) {
+					this.submitState.finish();
+					this.syncSubmitButtons();
+					new Notice(`${this.pluginName}: S3 endpoint rejected. ${endpointCheck.reason ?? ''}`);
+					return;
+				}
+			}
 			const hasStoredSecret = !!(this.editMount?.encryptedS3SecretKey);
 			if (!this.editMount && !this.s3SecretKey && !hasStoredSecret) {
 				this.submitState.finish();
@@ -1138,10 +1149,11 @@ export class MountManagerModal extends Modal {
 				new Notice(`${this.pluginName}: WebDAV server URL is required.`);
 				return;
 			}
-			try { new URL(this.webdavUrl); } catch {
+			const urlCheck = classifyRemoteUrl(this.webdavUrl);
+			if (!urlCheck.ok) {
 				this.submitState.finish();
 				this.syncSubmitButtons();
-				new Notice(`${this.pluginName}: WebDAV URL is not valid. Include the scheme, e.g. https://…`);
+				new Notice(`${this.pluginName}: ${urlCheck.reason ?? 'The WebDAV URL is not valid.'}`);
 				return;
 			}
 			if (!this.webdavUsername) {

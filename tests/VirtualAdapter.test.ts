@@ -109,3 +109,68 @@ describe('VirtualAdapter cachedRead', () => {
         expect(original.cachedRead).toHaveBeenCalledWith('vault/note.md');
     });
 });
+
+describe('VirtualAdapter copy source containment', () => {
+    const tempDirs: string[] = [];
+
+    afterEach(async () => {
+        await Promise.all(tempDirs.splice(0).map(dir => fs.rm(dir, { recursive: true, force: true })));
+    });
+
+    it('refuses to copy from a symlink that leaves the mount', async () => {
+        const root = await fs.mkdtemp(path.join(os.tmpdir(), 'folderbridge-copy-'));
+        tempDirs.push(root);
+        const mountDir = path.join(root, 'mount');
+        const outsideDir = path.join(root, 'outside');
+        await fs.mkdir(mountDir);
+        await fs.mkdir(outsideDir);
+        await fs.writeFile(path.join(outsideDir, 'secret.txt'), 'TOP SECRET');
+        // A link inside the mount pointing at a file outside it.
+        await fs.symlink(path.join(outsideDir, 'secret.txt'), path.join(mountDir, 'innocent.md'));
+
+        const mount = makeMount(mountDir);
+        const mapper = new PathMapper();
+        mapper.update([mount], 'test-device');
+        const security = new SecurityManager([mountDir]);
+        const adapter = new VirtualAdapter(
+            {},
+            mapper,
+            security,
+            false,
+            10 * 1024 * 1024,
+            async () => 'delete',
+            async () => { },
+            () => false,
+        );
+
+        await expect(adapter.copy('Mounted/innocent.md', 'Mounted/stolen.md')).rejects.toThrow(/allowlist/i);
+        // and nothing was written to the destination
+        await expect(fs.stat(path.join(mountDir, 'stolen.md'))).rejects.toMatchObject({ code: 'ENOENT' });
+    });
+
+    it('still copies an ordinary file inside the mount', async () => {
+        const root = await fs.mkdtemp(path.join(os.tmpdir(), 'folderbridge-copy-ok-'));
+        tempDirs.push(root);
+        const mountDir = path.join(root, 'mount');
+        await fs.mkdir(mountDir);
+        await fs.writeFile(path.join(mountDir, 'note.md'), 'hello');
+
+        const mount = makeMount(mountDir);
+        const mapper = new PathMapper();
+        mapper.update([mount], 'test-device');
+        const security = new SecurityManager([mountDir]);
+        const adapter = new VirtualAdapter(
+            {},
+            mapper,
+            security,
+            false,
+            10 * 1024 * 1024,
+            async () => 'delete',
+            async () => { },
+            () => false,
+        );
+
+        await adapter.copy('Mounted/note.md', 'Mounted/note-copy.md');
+        expect(await fs.readFile(path.join(mountDir, 'note-copy.md'), 'utf8')).toBe('hello');
+    });
+});

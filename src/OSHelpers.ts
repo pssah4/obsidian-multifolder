@@ -439,3 +439,50 @@ export function translateFsError(err: NodeJS.ErrnoException, op: string): string
 			return `${op}: ${err.message}`;
 	}
 }
+
+/**
+ * Check a remote endpoint URL (WebDAV server, S3 endpoint) before it is used
+ * for an authenticated connection.
+ *
+ * Plain `http` sends Basic-Auth credentials in the clear, so it is refused for
+ * remote hosts.  Loopback stays allowed because a local test server has no
+ * network path to intercept, and requiring a certificate there would block a
+ * legitimate setup.
+ */
+export function classifyRemoteUrl(raw: string): { ok: boolean; reason?: string } {
+	const trimmed = (raw ?? '').trim();
+	if (!trimmed) return { ok: false, reason: 'The server URL is required.' };
+
+	let parsed: URL;
+	try {
+		parsed = new URL(trimmed);
+	} catch {
+		return { ok: false, reason: 'The server URL is not valid. Include the scheme, e.g. https://…' };
+	}
+
+	if (parsed.protocol === 'https:') return { ok: true };
+
+	if (parsed.protocol === 'http:') {
+		// hostname strips the port but keeps the brackets around an IPv6 literal.
+		const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+		const isLoopback = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+		if (isLoopback) return { ok: true };
+		return {
+			ok: false,
+			reason: 'Use https for a remote server. Over plain http the username and password travel unencrypted.',
+		};
+	}
+
+	return { ok: false, reason: `"${parsed.protocol}" is not supported. Use https.` };
+}
+
+/**
+ * Strip trailing path separators without a regular expression.
+ * `/[\\/]+$/` backtracks quadratically on a long run of separators followed
+ * by a non-separator, so a loop is used instead.
+ */
+export function stripTrailingSeparators(value: string): string {
+	let end = value.length;
+	while (end > 0 && (value[end - 1] === '/' || value[end - 1] === '\\')) end--;
+	return value.slice(0, end);
+}

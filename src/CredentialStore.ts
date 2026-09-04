@@ -123,35 +123,65 @@ export const decryptPassword = decryptCredential;
 // ---------------------------------------------------------------------------
 
 /**
- * Persist a credential in sessionStorage under a namespaced key.
+ * Process-local credential store.
+ *
+ * `sessionStorage` is shared by everything running in the Obsidian renderer,
+ * so any other plugin can read a credential parked there with a single
+ * getItem(). This Map is reachable only through this module, which keeps
+ * decrypted secrets out of that shared surface.
+ */
+const memoryStore = new Map<string, string>();
+
+function sessionKey(service: string, mountId: string): string {
+    return `${SESSION_NS}-${service}-${mountId}`;
+}
+
+/**
+ * True when sessionStorage is the only place a credential can survive, i.e.
+ * on Obsidian Mobile where the OS keychain is absent. On desktop the encrypted
+ * blob in data.json is the durable copy and the plaintext stays in memory.
+ */
+function needsSessionStorageFallback(): boolean {
+    return !isEncryptionAvailable();
+}
+
+/**
+ * Hold a credential for the running session.
  *
  * @param service  Short service name, e.g. 'webdav', 's3', 'sftp'
  * @param mountId  The mount's unique id
  * @param value    The credential to store (e.g. password, secret key)
  */
 export function saveSessionCredential(service: string, mountId: string, value: string): void {
+    memoryStore.set(sessionKey(service, mountId), value);
+    if (!needsSessionStorageFallback()) return;
     try {
-        sessionStorage.setItem(`${SESSION_NS}-${service}-${mountId}`, value);
+        sessionStorage.setItem(sessionKey(service, mountId), value);
     } catch { /* sessionStorage unavailable */ }
 }
 
 /**
- * Load a credential from sessionStorage. Returns null if not found.
+ * Load a credential. Returns null if not found.
  */
 export function loadSessionCredential(service: string, mountId: string): string | null {
+    const key = sessionKey(service, mountId);
+    const fromMemory = memoryStore.get(key);
+    if (fromMemory != null) return fromMemory;
     try {
-        return sessionStorage.getItem(`${SESSION_NS}-${service}-${mountId}`);
+        return sessionStorage.getItem(key);
     } catch {
         return null;
     }
 }
 
 /**
- * Remove a credential from sessionStorage.
+ * Remove a credential from both the memory store and the sessionStorage
+ * fallback, so a revoked secret cannot be recovered from either.
  */
 export function clearSessionCredential(service: string, mountId: string): void {
+    memoryStore.delete(sessionKey(service, mountId));
     try {
-        sessionStorage.removeItem(`${SESSION_NS}-${service}-${mountId}`);
+        sessionStorage.removeItem(sessionKey(service, mountId));
     } catch { /* ignore */ }
 }
 

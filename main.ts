@@ -130,6 +130,25 @@ export default class FolderBridgePlugin extends Plugin {
 		return sourcePath ? sourcePath : null;
 	}
 
+	/**
+	 * Callback handed to SFTPAdapter so the fingerprint of a server's host key
+	 * is pinned on the first connection.  Later connections check against it,
+	 * which is what stops a substituted server from being accepted silently.
+	 * A mismatch is refused inside the adapter and never reaches here.
+	 */
+	private rememberSftpHostKey(mountId: string): (fingerprint: string) => void {
+		return (fingerprint: string) => {
+			const target = this.settings.mountPoints.find(m => m.id === mountId);
+			if (!target || target.sftpHostKeyFingerprint === fingerprint) return;
+			target.sftpHostKeyFingerprint = fingerprint;
+			backgroundTask(this.saveSettings(), 'pinning the SFTP host key', this.manifest.name);
+			new Notice(
+				`${this.manifest.name}: pinned the host key for "${target.label || target.virtualPath}" (${fingerprint}). ` +
+				`Compare it with your server if you were not expecting this.`
+			);
+		};
+	}
+
 	private isManagedTocSource(sourcePath?: string): boolean {
 		const managedSource = this.getManagedTocSourcePath();
 		return !!managedSource && sourcePath === managedSource;
@@ -765,7 +784,7 @@ export default class FolderBridgePlugin extends Plugin {
 							const plain = decryptCredential(mount.encryptedSftpPassphrase);
 							if (plain) saveSessionCredential('sftp-pp', mount.id, plain);
 						}
-						const sftpAdapter = SFTPAdapter.fromMount(mount);
+						const sftpAdapter = SFTPAdapter.fromMount(mount, this.rememberSftpHostKey(mount.id));
 						if (sftpAdapter) this.virtualAdapter?.setSFTPAdapter(mount.id, sftpAdapter);
 					}
 				}
@@ -1313,7 +1332,7 @@ export default class FolderBridgePlugin extends Plugin {
 					await this.saveSettings();
 				}
 			}
-			const sftpAdapter = SFTPAdapter.fromMount(mount);
+			const sftpAdapter = SFTPAdapter.fromMount(mount, this.rememberSftpHostKey(mount.id));
 			if (sftpAdapter) this.virtualAdapter?.setSFTPAdapter(mount.id, sftpAdapter);
 		}
 
@@ -1649,7 +1668,7 @@ export default class FolderBridgePlugin extends Plugin {
 				}
 			}
 			this.virtualAdapter?.clearSFTPAdapter(id);
-			const sftpAdapter = SFTPAdapter.fromMount(updatedMount);
+			const sftpAdapter = SFTPAdapter.fromMount(updatedMount, this.rememberSftpHostKey(updatedMount.id));
 			if (sftpAdapter) this.virtualAdapter?.setSFTPAdapter(id, sftpAdapter);
 		} else if (oldMount.mountType === 'sftp') {
 			this.virtualAdapter?.clearSFTPAdapter(id);
@@ -1881,7 +1900,7 @@ export default class FolderBridgePlugin extends Plugin {
 						const s3 = S3Adapter.fromMount(mount);
 						if (s3) reachable = (await s3.testConnection()) === null;
 					} else if (mount.mountType === 'sftp') {
-						const sftpAdapter = SFTPAdapter.fromMount(mount);
+						const sftpAdapter = SFTPAdapter.fromMount(mount, this.rememberSftpHostKey(mount.id));
 						if (sftpAdapter) reachable = (await sftpAdapter.testConnection()) === null;
 					} else {
 						// Local mounts require Node.js fs — unavailable on mobile
@@ -1934,7 +1953,7 @@ export default class FolderBridgePlugin extends Plugin {
 				const s3 = S3Adapter.fromMount(mount);
 				if (s3) reachable = (await s3.testConnection()) === null;
 			} else if (mount.mountType === 'sftp') {
-				const sftpAdapter = SFTPAdapter.fromMount(mount);
+				const sftpAdapter = SFTPAdapter.fromMount(mount, this.rememberSftpHostKey(mount.id));
 				if (sftpAdapter) reachable = (await sftpAdapter.testConnection()) === null;
 			} else {
 				if (fs && fs.promises) {
