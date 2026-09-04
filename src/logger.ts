@@ -21,7 +21,9 @@ function normalizeArgs(args: unknown[]): unknown[] {
 function write(level: LoggerLevel, ...args: unknown[]): void {
     const logger = globalThis.console;
     const method = logger?.[level] ?? logger?.log;
-    method?.(...normalizeArgs(args));
+    // Called through .call so the console keeps its own `this`; a detached
+    // console method throws in some host environments.
+    method?.call(logger, ...normalizeArgs(args));
 }
 
 export const logger = {

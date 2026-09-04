@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 import { SecurityManager } from '../src/SecurityManager';
 import type { MountPoint } from '../src/types';
 
@@ -171,4 +173,56 @@ describe('SecurityManager', () => {
 
 	// Note: the Windows case-insensitive comparison (normalizeForComparison) is
 	// tested in OSHelpers.test.ts. SecurityManager delegates to that function.
+});
+
+describe('SecurityManager symlink containment (H-2)', () => {
+	const tmpRoot = path.join(os.tmpdir(), `fb-sec-${process.pid}`);
+	const mountDir = path.join(tmpRoot, 'mount');
+	const outsideDir = path.join(tmpRoot, 'outside');
+	let sec: SecurityManager;
+
+	beforeEach(() => {
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+		fs.mkdirSync(mountDir, { recursive: true });
+		fs.mkdirSync(outsideDir, { recursive: true });
+		fs.writeFileSync(path.join(outsideDir, 'secret.txt'), 'secret');
+		fs.symlinkSync(outsideDir, path.join(mountDir, 'escape'));
+		sec = new SecurityManager([mountDir]);
+	});
+
+	afterEach(() => {
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it('rejects a path that leaves the allowlist through a symlinked directory', () => {
+		expect(sec.isAllowed(path.join(mountDir, 'escape', 'secret.txt'))).toBe(false);
+	});
+
+	it('rejects the symlinked directory itself', () => {
+		expect(sec.isAllowed(path.join(mountDir, 'escape'))).toBe(false);
+	});
+
+	it('still allows a real file inside the mount', () => {
+		fs.writeFileSync(path.join(mountDir, 'real.md'), 'x');
+		expect(sec.isAllowed(path.join(mountDir, 'real.md'))).toBe(true);
+	});
+
+	it('still allows a not-yet-existing path inside the mount (write targets)', () => {
+		expect(sec.isAllowed(path.join(mountDir, 'new-note.md'))).toBe(true);
+	});
+
+	it('rejects a not-yet-existing path under a symlinked directory', () => {
+		expect(sec.isAllowed(path.join(mountDir, 'escape', 'new-note.md'))).toBe(false);
+	});
+});
+
+describe('SecurityManager input hardening (L-1)', () => {
+	it('validates a virtual path with many trailing separators in linear time', () => {
+		const sec = new SecurityManager(['/allowed/path']);
+		// Trailing separators followed by a non-separator: the backtracking case.
+		const mount = mkMount('Vault' + '/'.repeat(60000) + 'x', '/allowed/path');
+		const started = Date.now();
+		sec.validateMount(mount, []);
+		expect(Date.now() - started).toBeLessThan(100);
+	});
 });

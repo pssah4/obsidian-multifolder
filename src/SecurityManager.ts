@@ -1,11 +1,45 @@
 import { MountPoint, MountType } from './types';
-import { normalizeForComparison, isUNCPath } from './OSHelpers';
+import { normalizeForComparison, isUNCPath, stripTrailingSeparators } from './OSHelpers';
 import { loadOptionalNodeModule } from './runtimeNode';
 // Node.js builtins are lazy-loaded so the plugin still loads on mobile
 const path: typeof import('path') = loadOptionalNodeModule<typeof import('path')>('path') ?? null as never;
+const fs: typeof import('fs') | null = loadOptionalNodeModule<typeof import('fs')>('fs');
 
 /** Mount types whose realPath is a remote address, not a local filesystem path. */
 const CLOUD_MOUNT_TYPES: Set<MountType> = new Set(['webdav', 's3', 'sftp']);
+
+/** Upper bound on how far resolveSymlinks() walks up looking for an existing ancestor. */
+const MAX_ANCESTOR_WALK = 64;
+
+/**
+ * Resolve every symlink in `target` so containment can be checked against the
+ * location the OS will actually open, not the textual path.
+ *
+ * A path that does not exist yet (a write target) has no realpath, so the
+ * nearest existing ancestor is resolved and the remaining segments are
+ * re-attached.  That still catches a symlinked parent directory.
+ *
+ * Returns the input unchanged when `fs` is unavailable (mobile) or the walk
+ * hits the filesystem root, which keeps the caller's textual check as the
+ * fallback rather than failing open on an exception.
+ */
+function resolveSymlinks(target: string): string {
+	if (!fs) return target;
+	const pending: string[] = [];
+	let current = target;
+	for (let i = 0; i < MAX_ANCESTOR_WALK; i++) {
+		try {
+			const real = fs.realpathSync(current);
+			return pending.length ? path.join(real, ...pending.reverse()) : real;
+		} catch {
+			const parent = path.dirname(current);
+			if (!parent || parent === current) return target;
+			pending.push(path.basename(current));
+			current = parent;
+		}
+	}
+	return target;
+}
 
 /**
  * SecurityManager enforces an explicit allowlist of real filesystem paths.
@@ -17,12 +51,12 @@ export class SecurityManager {
 	private allowlist: Set<string>;
 
 	constructor(allowedPaths: string[]) {
-		this.allowlist = new Set(allowedPaths.map(p => normalizeForComparison(p)));
+		this.allowlist = new Set(allowedPaths.map(p => normalizeForComparison(resolveSymlinks(p))));
 	}
 
 	/** Replace the entire allowlist (call after settings change). */
 	setAllowlist(paths: string[]): void {
-		this.allowlist = new Set(paths.map(p => normalizeForComparison(p)));
+		this.allowlist = new Set(paths.map(p => normalizeForComparison(resolveSymlinks(p))));
 	}
 
 	/**
@@ -30,9 +64,15 @@ export class SecurityManager {
 	 * contained inside one.  The check is path-separator-aware to prevent
 	 * prefix-substring false positives (e.g. "/foo" must not match "/foobar").
 	 * On Windows the comparison is case-insensitive.
+	 *
+	 * Symlinks are resolved on both sides before comparing, so a link inside a
+	 * mount that points outside it does not pass.  This is a check against the
+	 * filesystem state at call time; a link swapped between this check and the
+	 * subsequent I/O call is not covered (CWE-367) and would need an
+	 * openat/O_NOFOLLOW-based API to close completely.
 	 */
 	isAllowed(realPath: string): boolean {
-		const normalized = normalizeForComparison(realPath);
+		const normalized = normalizeForComparison(resolveSymlinks(realPath));
 		for (const allowed of this.allowlist) {
 			if (
 				normalized === allowed ||
@@ -92,12 +132,12 @@ export class SecurityManager {
 		}
 
 		// Normalize virtual path (trim and remove trailing slashes) for comparison
-		const virtualNorm = mount.virtualPath.trim().replace(/[\\/]+$/, '');
+		const virtualNorm = stripTrailingSeparators(mount.virtualPath.trim());
 
 		// Reject duplicate virtual paths
 		if (
 			existingMounts.some(
-				m => (m.virtualPath || '').trim().replace(/[\\/]+$/, '') === virtualNorm
+				m => stripTrailingSeparators((m.virtualPath || '').trim()) === virtualNorm
 			)
 		) {
 			return `Virtual path "${virtualNorm}" is already in use.`;
@@ -109,7 +149,7 @@ export class SecurityManager {
 			if (!existingVirtual) {
 				continue;
 			}
-			const existingVirtualNorm = existingVirtual.replace(/[\\/]+$/, '');
+			const existingVirtualNorm = stripTrailingSeparators(existingVirtual);
 			if (!existingVirtualNorm || existingVirtualNorm === virtualNorm) {
 				continue;
 			}

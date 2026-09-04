@@ -44,11 +44,41 @@ const pathMod: typeof import('path') | null = loadOptionalNodeModule<typeof impo
 
 // Import the single-source-of-truth MIME tables from OSHelpers so this file
 // never maintains its own independent copy.
-import { ALL_MEDIA_MIME } from './OSHelpers';
+import { ALL_MEDIA_MIME, stripTrailingSeparators } from './OSHelpers';
 
 // Re-export STREAMING_MIME so consumers (VirtualAdapter, main.ts) can import
 // it from this file without needing to know it lives in OSHelpers.
 export { STREAMING_MIME } from './OSHelpers';
+
+/**
+ * Canonical form of a mount root for containment checks: forward slashes,
+ * no trailing separator, resolved to an absolute path.
+ */
+export function normalizeRootForServing(root: string): string {
+    const forward = root.replace(/\\/g, '/');
+    const absolute = pathMod ? pathMod.resolve(forward) : forward;
+    const unified = absolute.replace(/\\/g, '/');
+    // stripTrailingSeparators instead of /\/+$/: on mobile pathMod is null, so
+    // the unresolved string reaches this line and a long run of separators
+    // would make that regex backtrack quadratically.
+    return unified.length > 1 ? stripTrailingSeparators(unified) : unified;
+}
+
+/**
+ * True when `requestedPath` resolves to a location inside one of `roots`.
+ *
+ * The path is resolved BEFORE comparing, so `..` segments cannot walk out of a
+ * root while still carrying its prefix as text.  Comparing the raw request
+ * string, as an earlier version did, accepted `<root>/../../etc/passwd`.
+ */
+export function isPathWithinRoots(requestedPath: string, roots: Set<string>): boolean {
+    if (!requestedPath) return false;
+    const candidate = normalizeRootForServing(requestedPath);
+    for (const root of roots) {
+        if (candidate === root || candidate.startsWith(root + '/')) return true;
+    }
+    return false;
+}
 
 export class FileServer {
     private server: import('http').Server | null = null;
@@ -205,8 +235,16 @@ export class FileServer {
             const fileSize = stat.size;
             const nativePath = filePath.split('/').join(pathMod.sep);
 
-            // Add CORS headers so Obsidian's renderer (different "origin") can load the resource
-            res.setHeader('Access-Control-Allow-Origin', '*');
+            // Echo the caller's origin instead of the blanket `*` an earlier
+            // version sent, and send nothing when there is no Origin header
+            // (the no-cors case that <video>/<img> use, which needs no CORS at
+            // all).  The session token remains the actual access control here;
+            // this only narrows what a leaked token would expose.
+            const origin = req.headers['origin'];
+            if (typeof origin === 'string' && origin) {
+                res.setHeader('Access-Control-Allow-Origin', origin);
+                res.setHeader('Vary', 'Origin');
+            }
             res.setHeader('Accept-Ranges', 'bytes');
 
             const rangeHeader = req.headers['range'];
@@ -257,16 +295,11 @@ export class FileServer {
     // ------------------------------------------------------------------
 
     private normalize(p: string): string {
-        return p.replace(/\\/g, '/').replace(/\/$/, '');
+        return normalizeRootForServing(p);
     }
 
     private isPathAllowed(forwardSlashPath: string): boolean {
-        for (const root of this.allowedRoots) {
-            if (forwardSlashPath.startsWith(root + '/') || forwardSlashPath === root) {
-                return true;
-            }
-        }
-        return false;
+        return isPathWithinRoots(forwardSlashPath, this.allowedRoots);
     }
 
     private generateToken(): string {
