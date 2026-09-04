@@ -1266,7 +1266,12 @@ export class VirtualAdapter {
 			} else if (srcSFTP && srcMount) {
 				content = Buffer.from(await srcSFTP.readBinary(this.toServerPath(normalizedPath, srcMount)));
 			} else if (srcMount) {
-				content = await fs.promises.readFile(this.toReal(normalizedPath, srcMount));
+				const srcReal = this.toReal(normalizedPath, srcMount);
+				// The source needs the same allowlist check as the destination
+				// below; read() and readBinary() both make it, and without it a
+				// symlink inside the mount copies a file from outside it.
+				this.assertAllowed(srcReal);
+				content = await fs.promises.readFile(srcReal);
 			} else {
 				content = Buffer.from(await this.orig().readBinary(normalizedPath));
 			}

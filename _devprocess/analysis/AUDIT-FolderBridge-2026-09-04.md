@@ -360,3 +360,65 @@ deshalb direkt über die CodeQL-CLI gefahren, mit demselben Pack 2.3.2. Der
 Delta-Vergleich über Fingerprints weist 10 aufgelöste Findings aus; die als neu
 gemeldeten Fingerprints sind zwei bereits bekannte False Positives, deren Snippet
 sich durch die Änderungen verschoben hat.
+
+---
+
+## Nachtrag: Bypass im H-2-Fix, gefunden im Review
+
+Ein anschließender Security-Review der Fix-Commits fand einen Bypass in genau
+dem Schutz, den H-2 einführen sollte. Zwei weitere Kandidaten aus demselben
+Review wurden geprüft und verworfen, weil sie unvollständige Härtung eines
+Vorzustands beschreiben und nicht durch die Änderungen entstanden sind.
+
+### H-6: Allowlist per dangling Symlink umgehbar
+
+- **Severity:** Hoch
+- **CWE-ID:** CWE-59
+- **CVSS:** CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:H = 7.2
+- **Location:** [src/SecurityManager.ts:26](src/SecurityManager.ts#L26) (`resolveSymlinks`), Senken in [src/VirtualAdapter.ts:677](src/VirtualAdapter.ts#L677), [:722](src/VirtualAdapter.ts#L722), [:762](src/VirtualAdapter.ts#L762), [:1288](src/VirtualAdapter.ts#L1288)
+- **Status:** Resolved
+- **Evidence:** `fs.realpathSync` löst die letzte Pfadkomponente mit auf und wirft
+  daher `ENOENT` für einen dangling Symlink, also einen Link, dessen Ziel noch
+  nicht existiert. Das ist von einer schlicht fehlenden Datei nicht zu
+  unterscheiden, und genau für diesen Fall war der catch-Zweig gedacht. Er
+  entfernte den Linknamen, löste das Elternverzeichnis auf (im Mount, also auf
+  sich selbst) und hängte den Namen textuell wieder an. `isAllowed` sah einen
+  Pfad im Mount, das Betriebssystem folgte beim Öffnen mit `O_CREAT` dem Link.
+  `lstat` kam in der Funktion nicht vor.
+- **Risk:** Ein Angreifer mit Schreibzugriff auf den gemounteten Ordner legt
+  einen Link auf einen noch nicht existierenden Pfad, etwa
+  `~/Library/LaunchAgents/com.evil.plist`. Der Link ist unsichtbar, weil
+  `listRealDirectory` gebrochene Links überspringt und `exists()` false meldet,
+  wodurch Obsidian auch nicht auf `name 1.md` ausweicht. Beim nächsten Anlegen
+  oder Kopieren dieser Datei landet der Inhalt am Zielort des Links.
+- **Remediation:** `reattachUnresolved` hängt die unaufgelösten Segmente nicht
+  mehr blind an, sondern prüft jedes per `lstat`, folgt einem Link per
+  `readlink` und tritt für das Ziel erneut in die volle Auflösung ein
+  (Hop-Limit 32, angelehnt an ELOOP). Abgesichert durch 7 Tests, davon 4 für die
+  Escape-Fälle und 3 als Regressionswächter für schreibbare, noch nicht
+  existierende Pfade.
+
+### H-7: copy() prüfte den Quellpfad nicht
+
+- **Severity:** Mittel
+- **CWE-ID:** CWE-59, CWE-284
+- **Location:** [src/VirtualAdapter.ts:1269](src/VirtualAdapter.ts#L1269)
+- **Status:** Resolved
+- **Evidence:** Der Schreibpfad in `copy()` rief `assertAllowed(dstReal)`, der
+  Lesepfad zwei Dutzend Zeilen darüber nicht, obwohl `read()` und `readBinary()`
+  beide prüfen. Ein Symlink im Mount, der auf eine existierende Datei außerhalb
+  zeigt, wird als reguläre Datei gelistet und ließ sich in den Vault kopieren.
+  Der Befund lag außerhalb des ursprünglichen Berichts und stammt aus dem
+  Review derselben Sicherheitsgrenze.
+- **Remediation:** `assertAllowed(srcReal)` vor dem `readFile` ergänzt, mit zwei
+  Tests.
+
+### Verworfene Review-Kandidaten
+
+| Kandidat | Bewertung |
+|----------|-----------|
+| SFTP-Host-Key wird ohne Rückfrage gelernt (Trust on first use), auch aus dem 30-Sekunden-Health-Check | Kein neuer Befund. Vor der Änderung akzeptierte ssh2 jeden Host-Key bei jeder Verbindung; jetzt genau einmal pro Mount. Eine blockierende Bestätigung wäre zusätzliche Härtung, ssh2 unterstützt sie über die asynchrone Form von `hostVerifier`. Als Verbesserungsvorschlag notiert. |
+| `classifyRemoteUrl` greift nur im Einstellungsdialog, nicht in `WebDAVAdapter.fromMount` | Kein neuer Befund. `WebDAVAdapter.ts` ist unverändert, die Prüfung im Dialog wurde von `new URL()` auf `classifyRemoteUrl` verschärft. Bestehende http-Mounts verhalten sich wie zuvor. Die Prüfung an die Verbindungsgrenze zu ziehen, würde die Lücke für bestehende und über data.json synchronisierte Mounts schließen; als Folgearbeit notiert. |
+
+Der Stand nach diesem Nachtrag: 181 Tests grün, `npm run validate` durch, CodeQL
+meldet außer dem bewusst akzeptierten Mobile-Fallback in `CredentialStore` nichts.

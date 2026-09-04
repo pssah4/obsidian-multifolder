@@ -226,3 +226,57 @@ describe('SecurityManager input hardening (L-1)', () => {
 		expect(Date.now() - started).toBeLessThan(100);
 	});
 });
+
+describe('SecurityManager dangling symlink containment (H-2 follow-up)', () => {
+	const tmpRoot = path.join(os.tmpdir(), `fb-dangling-${process.pid}`);
+	const mountDir = path.join(tmpRoot, 'mount');
+	const outsideDir = path.join(tmpRoot, 'outside');
+	let sec: SecurityManager;
+
+	beforeEach(() => {
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+		fs.mkdirSync(mountDir, { recursive: true });
+		fs.mkdirSync(outsideDir, { recursive: true });
+		sec = new SecurityManager([mountDir]);
+	});
+
+	afterEach(() => {
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it('rejects a dangling symlink whose target lies outside the mount', () => {
+		// The target does not exist yet, so realpath() fails on the link itself.
+		fs.symlinkSync(path.join(outsideDir, 'not-created-yet.txt'), path.join(mountDir, 'note.md'));
+		expect(sec.isAllowed(path.join(mountDir, 'note.md'))).toBe(false);
+	});
+
+	it('rejects writing through a dangling symlink in a parent directory', () => {
+		fs.symlinkSync(path.join(outsideDir, 'nodir'), path.join(mountDir, 'sub'));
+		expect(sec.isAllowed(path.join(mountDir, 'sub', 'note.md'))).toBe(false);
+	});
+
+	it('rejects a chain of symlinks that ends outside the mount', () => {
+		fs.symlinkSync(path.join(mountDir, 'hop2'), path.join(mountDir, 'hop1'));
+		fs.symlinkSync(path.join(outsideDir, 'target.txt'), path.join(mountDir, 'hop2'));
+		expect(sec.isAllowed(path.join(mountDir, 'hop1'))).toBe(false);
+	});
+
+	it('still allows a dangling symlink that points back inside the mount', () => {
+		fs.mkdirSync(path.join(mountDir, 'inner'));
+		fs.symlinkSync(path.join(mountDir, 'inner', 'future.md'), path.join(mountDir, 'link.md'));
+		expect(sec.isAllowed(path.join(mountDir, 'link.md'))).toBe(true);
+	});
+
+	it('still allows an ordinary not-yet-existing file (the write-target case)', () => {
+		expect(sec.isAllowed(path.join(mountDir, 'brand-new.md'))).toBe(true);
+	});
+
+	it('still allows a deep not-yet-existing path inside the mount', () => {
+		expect(sec.isAllowed(path.join(mountDir, 'a', 'b', 'c.md'))).toBe(true);
+	});
+
+	it('rejects a relative dangling symlink that escapes with ..', () => {
+		fs.symlinkSync(path.join('..', 'outside', 'sneaky.txt'), path.join(mountDir, 'rel.md'));
+		expect(sec.isAllowed(path.join(mountDir, 'rel.md'))).toBe(false);
+	});
+});

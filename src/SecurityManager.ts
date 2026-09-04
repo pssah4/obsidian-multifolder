@@ -10,6 +10,8 @@ const CLOUD_MOUNT_TYPES: Set<MountType> = new Set(['webdav', 's3', 'sftp']);
 
 /** Upper bound on how far resolveSymlinks() walks up looking for an existing ancestor. */
 const MAX_ANCESTOR_WALK = 64;
+/** Upper bound on symlink hops, mirroring the kernel's ELOOP limit. */
+const MAX_LINK_HOPS = 32;
 
 /**
  * Resolve every symlink in `target` so containment can be checked against the
@@ -17,20 +19,22 @@ const MAX_ANCESTOR_WALK = 64;
  *
  * A path that does not exist yet (a write target) has no realpath, so the
  * nearest existing ancestor is resolved and the remaining segments are
- * re-attached.  That still catches a symlinked parent directory.
+ * re-attached by reattachUnresolved(), which follows any symlink among them.
  *
  * Returns the input unchanged when `fs` is unavailable (mobile) or the walk
  * hits the filesystem root, which keeps the caller's textual check as the
  * fallback rather than failing open on an exception.
  */
-function resolveSymlinks(target: string): string {
-	if (!fs) return target;
+function resolveSymlinks(target: string, hops = 0): string {
+	if (!fs || hops > MAX_LINK_HOPS) return target;
 	const pending: string[] = [];
 	let current = target;
 	for (let i = 0; i < MAX_ANCESTOR_WALK; i++) {
 		try {
 			const real = fs.realpathSync(current);
-			return pending.length ? path.join(real, ...pending.reverse()) : real;
+			if (!pending.length) return real;
+			pending.reverse();
+			return reattachUnresolved(real, pending, hops);
 		} catch {
 			const parent = path.dirname(current);
 			if (!parent || parent === current) return target;
@@ -39,6 +43,43 @@ function resolveSymlinks(target: string): string {
 		}
 	}
 	return target;
+}
+
+/**
+ * Append segments that realpathSync() could not resolve, following any symlink
+ * encountered on the way.
+ *
+ * A DANGLING symlink (one whose target does not exist yet) is the reason this
+ * cannot simply path.join(): realpathSync() throws ENOENT on it exactly as it
+ * does on a plain missing file, so it arrives here as an unresolved segment.
+ * Joining it as text would report a contained path while the OS, opening with
+ * O_CREAT, follows the link and creates the target outside the allowlist.
+ */
+function reattachUnresolved(base: string, segments: string[], hops: number): string {
+	if (!fs) return path.join(base, ...segments);
+	let resolved = base;
+	for (let i = 0; i < segments.length; i++) {
+		const candidate = path.join(resolved, segments[i]);
+		let linkTarget: string | null = null;
+		try {
+			if (fs.lstatSync(candidate).isSymbolicLink()) {
+				linkTarget = fs.readlinkSync(candidate);
+			}
+		} catch {
+			// No lstat entry at all: a genuinely missing segment, and everything
+			// below it is missing too. Nothing left that could be a link.
+		}
+		if (linkTarget !== null) {
+			// A relative link resolves against the directory holding it.
+			const absolute = path.resolve(path.dirname(candidate), linkTarget);
+			const rest = segments.slice(i + 1);
+			// Re-enter the full resolution so the target's own ancestors and any
+			// further links in the chain are resolved as well.
+			return resolveSymlinks(rest.length ? path.join(absolute, ...rest) : absolute, hops + 1);
+		}
+		resolved = candidate;
+	}
+	return resolved;
 }
 
 /**
