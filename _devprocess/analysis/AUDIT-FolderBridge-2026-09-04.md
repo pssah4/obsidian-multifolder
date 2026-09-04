@@ -13,7 +13,8 @@ date: 2026-09-04
 | Datum | 2026-09-04 |
 | Branch | feature/audit-2026-09-04 (HEAD 6973ead) |
 | Scan-Scope | full, 108 Dateien im Scope |
-| Risikobewertung | **Hoch** |
+| Risikobewertung bei Erstprüfung | **Hoch** |
+| Risikobewertung nach Fix-Loop | **Niedrig** |
 
 ---
 
@@ -271,3 +272,91 @@ Taxonomie-Snapshot: OWASP Top 10:2025, CWE Top 25 2025 (veröffentlicht 2025-12-
 ## Empfehlung
 
 **Release-Bewertung: rot.** H-1 und H-2 betreffen beide die Kernzusage des Plugins, nämlich dass Zugriffe die konfigurierte Grenze einhalten und die Gegenstelle die ist, für die sie sich ausgibt. Beide sind mit überschaubarem Aufwand behebbar. H-3 bis H-5 sollten im selben Zug erledigt werden, weil sie den Verteilweg zu den Nutzern betreffen und nur wenige Zeilen kosten.
+
+---
+
+## Fix-Loop und Re-Audit
+
+Alle Findings wurden behoben (Option "alles fixen"). Jeder Fix wurde test-first
+entwickelt: zuerst ein Test, der den Befund reproduziert und rot ist, dann die
+Korrektur, dann derselbe Test grün. Die Testsuite wuchs dabei von 134 auf 172
+Tests, alle grün, und `npm run validate` (lint, UI-Text-Check, Build, Tests)
+läuft vollständig durch.
+
+### Status je Finding
+
+| ID | Befund | Status | Nachweis |
+|----|--------|--------|----------|
+| H-1 | SFTP ohne Host-Key-Verifikation | Resolved | `hostVerifier` mit Fingerprint-Pinning, 8 Tests in `tests/SFTPHostKey.test.ts` |
+| H-2 | Allowlist per Symlink umgehbar | Resolved | `realpath`-Auflösung vor dem Präfixvergleich, 5 Tests mit echten Symlinks |
+| H-3 bis H-5 | Actions auf bewegliche Tags gepinnt | Resolved | Commit-SHAs gepinnt, Scanner meldet 0 Action-Pinning-Findings |
+| M-1 | Secrets im Klartext in sessionStorage | **Teilweise** | Desktop: prozessinterner Speicher, 5 Tests. Mobile: siehe Restrisiko unten |
+| M-2 | Path Traversal im FileServer | Resolved | `path.resolve` vor dem Vergleich, 12 Tests in `tests/FileServerPath.test.ts` |
+| M-3 | WebDAV akzeptiert http:// | Resolved | `classifyRemoteUrl`, 7 Tests; gilt jetzt auch für den S3-Endpoint |
+| M-4 | persist-credentials fehlt | Resolved | `persist-credentials: false` in beiden Workflows |
+| M-5 | build-check.yml ohne permissions | Resolved | `permissions: contents: read` ergänzt |
+| M-6, M-7 | fast-xml-parser, fast-xml-builder | Resolved | Overrides auf 5.7.0 / 1.1.7, OSV-Recheck: 0 Treffer |
+| M-8 | npm ci scheitert auf arm64 | Resolved | `@esbuild/linux-x64` entfernt, Installation läuft |
+| L-1 | Quadratische Regex in validateMount | Resolved | Schleife statt Regex, Messung von 1509 ms auf unter 100 ms |
+| L-2, L-3 | brace-expansion, 14 Dev-Pakete | Resolved | Gezielte Overrides, OSV-Recheck: 0 Treffer |
+
+### Während des Fix-Loops eingeschleppt und behoben
+
+Der erste Entwurf von `normalizeRootForServing` in `src/FileServer.ts` enthielt
+dieselbe quadratische Regex `/\/+$/`, die in L-1 gerade beseitigt worden war.
+CodeQL hat das im Re-Audit als `js/polynomial-redos` gemeldet. Die Funktion nutzt
+jetzt `stripTrailingSeparators`, das für beide Module gemeinsam in `OSHelpers`
+liegt. Auf dem Desktop war der Fall durch das vorgeschaltete `path.resolve`
+ohnehin entschärft; auf Mobile, wo `pathMod` null ist, wäre er erreichbar gewesen.
+
+Ein zweiter Fehlgriff betraf `eslint --fix`: Die Regel
+`no-unnecessary-type-assertion` entfernte in `src/VirtualAdapter.ts` einen Cast,
+der die Aufrufsignatur von `trashLocal` erweiterte, was den Build brach. Die
+Änderung wurde zurückgenommen.
+
+### Verbleibendes Restrisiko
+
+**Zugangsdaten auf Obsidian Mobile.** `saveSessionCredential` schreibt weiterhin
+in `sessionStorage`, wenn `isEncryptionAvailable()` false liefert. Auf Mobile
+existiert keine OS-Keychain, also gibt es dort keinen geschützten Ablageort. Die
+Alternative wäre, Zugangsdaten gar nicht zu halten und sie nach jedem Reload neu
+abzufragen. CodeQL meldet die Stelle weiterhin als
+`js/clear-text-storage-of-sensitive-data` (`src/CredentialStore.ts:159`); der
+Treffer ist zutreffend und wird bewusst in Kauf genommen. Auf dem Desktop ist der
+Pfad nicht mehr erreichbar.
+
+**Race zwischen Prüfung und Zugriff.** `isAllowed()` prüft den Zustand des
+Dateisystems zum Aufrufzeitpunkt. Ein Symlink, der zwischen Prüfung und der
+darauffolgenden I/O-Operation ausgetauscht wird, ist damit nicht abgedeckt
+(CWE-367). Ein vollständiger Schutz bräuchte `openat` mit `O_NOFOLLOW`, was die
+Node-API in dieser Form nicht anbietet. Der Kommentar an der Methode hält das fest.
+
+**Kosten der Symlink-Auflösung.** `isAllowed()` ruft jetzt `fs.realpathSync` auf
+und liegt im Pfad jeder I/O-Operation. Ein Cache wurde bewusst weggelassen, weil
+er genau die Race-Bedingung vergrößern würde, die der Fix schließt. Ob die
+zusätzlichen Syscalls bei sehr großen Mounts spürbar sind, wurde nicht gemessen.
+
+### Nicht verifiziert
+
+Die Fixes sind durch Tests, Build und Re-Scan abgesichert, aber das Plugin lief
+zu keinem Zeitpunkt in einer echten Obsidian-Instanz. Drei Änderungen berühren
+Verhalten, das sich nur dort abschließend beurteilen lässt:
+
+- Der CORS-Header des FileServers echot jetzt die Origin des Aufrufers, statt `*`
+  zu senden. Medien-Einbettungen ohne `crossorigin`-Attribut brauchen keinen
+  CORS-Header, ein Bruch ist daher unwahrscheinlich, aber ungeprüft.
+- Das Host-Key-Pinning zeigt beim ersten Verbinden eine Notice und schreibt den
+  Fingerprint in die Settings. Der Ablauf wurde nicht gegen einen echten
+  SFTP-Server durchgespielt.
+- `http://` auf entfernte Hosts wird bei WebDAV und S3 jetzt abgelehnt. Wer bisher
+  einen unverschlüsselten Server genutzt hat, muss auf https wechseln.
+
+### Werkzeuge im Re-Audit
+
+`npm audit` blieb durch den Registry-Proxy blockiert, die SCA lief erneut über
+OSV.dev (586 Pakete, 0 Treffer). Der CodeQL-Aufruf innerhalb von `audit_scan.py`
+brach reproduzierbar mit `database create failed (exit 2)` ab; die Analyse wurde
+deshalb direkt über die CodeQL-CLI gefahren, mit demselben Pack 2.3.2. Der
+Delta-Vergleich über Fingerprints weist 10 aufgelöste Findings aus; die als neu
+gemeldeten Fingerprints sind zwei bereits bekannte False Positives, deren Snippet
+sich durch die Änderungen verschoben hat.
