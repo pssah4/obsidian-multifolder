@@ -1,6 +1,6 @@
 {
     "name": "folderbridge",
-    "version": "2.15.3",
+    "version": "2.16.0",
     "description": "Adds external folders to your vault as seamless, native-feeling directories. Creates virtual mount points that map real filesystem paths into the vault.",
     "main": "main.js",
     "scripts": {
@@ -11,7 +11,8 @@
         "test": "vitest run",
         "validate": "npm run lint && npm run check:ui-text && npm run build && npm test",
         "hooks:install": "git config core.hooksPath .githooks",
-        "version": "node version-bump.mjs && git add manifest.json versions.json"
+        "version": "node version-bump.mjs && git add manifest.json versions.json",
+        "deploy": "bash deploy-local.sh --build"
     },
     "keywords": [
         "obsidian",

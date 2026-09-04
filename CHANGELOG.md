@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.16.0] - 2026-09-04
+
+### Security
+
+This release closes every finding of a full security audit (see the audit
+report in the private development notes). Two of them broke guarantees the
+code documented but did not hold.
+
+- **SFTP connections now verify the server host key.** `ssh2` accepts any host
+  key when no `hostVerifier` is supplied, and none was, so every SFTP mount was
+  open to a machine-in-the-middle that could capture the password. The
+  fingerprint is now pinned on the first connection and checked on every later
+  one; a mismatch aborts the handshake before authentication.
+- **The path allowlist no longer resolves symlinks textually.** `path.normalize`
+  resolves `..` but not symlinks, so a link inside a mounted folder reached
+  outside it for read, write and recursive delete. Containment is now checked
+  against the resolved path. A follow-up fixed the same bypass for *dangling*
+  symlinks, where `realpath` fails and the segment used to be re-attached as
+  text.
+- **The local media server rejects path traversal.** Its allowlist check
+  compared an unnormalized request path, so `<root>/../../etc/passwd` passed.
+  It also no longer sends `Access-Control-Allow-Origin: *`.
+- **Credentials stay out of `sessionStorage` on desktop.** Decrypted secrets
+  were written there on every start, where any other plugin in the renderer
+  could read them. They now live in a process-local store; `sessionStorage`
+  remains only on mobile, where no OS keychain exists.
+- **`copy()` checks its source path** against the allowlist, which it did only
+  for the destination.
+
+### Changed
+
+- **WebDAV and S3 endpoints require https.** Plain `http` is refused for remote
+  hosts because it sends credentials in the clear; `localhost` and `127.0.0.1`
+  stay allowed for local test servers. Existing mounts are unaffected, but an
+  `http` URL can no longer be entered.
+- GitHub Actions are pinned to commit SHAs, workflows declare least-privilege
+  `permissions`, and the checkout no longer persists the repository token.
+
+### Fixed
+
+- `npm ci` failed on every machine that is not linux-x64, because
+  `@esbuild/linux-x64` was declared as a direct devDependency. It is resolved by
+  esbuild itself again, which also makes the build reproducible off CI.
+- Vulnerable transitive dependencies (`fast-xml-parser`, `fast-xml-builder`,
+  `brace-expansion`) are pinned to fixed versions via `overrides`.
+- Replaced a regular expression whose runtime grew quadratically with the number
+  of trailing path separators.
+
+### Added
+
+- `deploy-local.sh` (plus `npm run deploy`) copies a build into a local vault,
+  with the target configured in a git-ignored `.env`.
+
 ## [2.15.3] - 2026-03-18
 
 ### Fixed
