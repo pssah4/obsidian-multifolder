@@ -1,6 +1,6 @@
-# Contributing to FolderBridge
+# Contributing to Multifolder
 
-Thank you for your interest in contributing to FolderBridge! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Multifolder! This document provides guidelines and instructions for contributing.
 
 ## 🎯 Ways to Contribute
 
@@ -17,8 +17,8 @@ Thank you for your interest in contributing to FolderBridge! This document provi
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/Obsidian_FolderBridge.git
-   cd Obsidian_FolderBridge
+   git clone https://github.com/YOUR_USERNAME/Obsidian_Multifolder.git
+   cd Obsidian_Multifolder
    ```
 3. **Install dependencies**:
    ```bash
@@ -195,7 +195,7 @@ All submissions require review:
 ## 🎨 Project Structure
 
 ```
-Obsidian_FolderBridge/
+Obsidian_Multifolder/
 ├── .github/              # GitHub templates and workflows
 ├── .vscode/              # VS Code configuration
 ├── main.ts               # Main plugin code
@@ -234,4 +234,4 @@ Contributors will be:
 
 ## 🎉 Thank You!
 
-Your contributions make FolderBridge better for everyone!
+Your contributions make Multifolder better for everyone!

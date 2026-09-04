@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed to Multifolder.** The plugin id changed from `folderbridge` to `multifolder`,
+  which makes this a separate plugin as far as Obsidian is concerned: the folder under
+  `.obsidian/plugins/` has to be renamed and settings do not carry over automatically.
+  Class names, CSS classes and the session-storage namespace follow the new name.
+- **Attribution made explicit.** This project is a fork of
+  [Folder Bridge](https://github.com/tescolopio/Obsidian_FolderBridge) by Tim Escolopio.
+  The README says so at the top, `LICENSE` carries both copyright notices as MIT requires,
+  and the settings panel links to the original author rather than implying this is his work.
+  The "buy me a coffee" button still points at him.
+
 ## [2.16.0] - 2026-09-04
 
 ### Security

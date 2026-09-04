@@ -1,6 +1,6 @@
 # Development Guide
 
-This document provides detailed instructions for setting up and developing the FolderBridge plugin for Obsidian.
+This document provides detailed instructions for setting up and developing the Multifolder plugin for Obsidian.
 
 ## Prerequisites
 
@@ -31,8 +31,8 @@ This document provides detailed instructions for setting up and developing the F
 
 ```bash
 # Clone the repository
-git clone https://github.com/tescolopio/Obsidian_FolderBridge.git
-cd Obsidian_FolderBridge
+git clone https://github.com/pssah4/obsidian-multifolder.git
+cd Obsidian_Multifolder
 
 # Install dependencies
 npm install
@@ -61,19 +61,19 @@ Create a symbolic link from your vault's plugins directory to this project:
 
 **macOS/Linux:**
 ```bash
-ln -s "$(pwd)" "/path/to/your/vault/.obsidian/plugins/obsidian-folderbridge"
+ln -s "$(pwd)" "/path/to/your/vault/.obsidian/plugins/obsidian-multifolder"
 ```
 
 **Windows (PowerShell as Administrator):**
 ```powershell
-New-Item -ItemType SymbolicLink -Path "C:\path\to\your\vault\.obsidian\plugins\obsidian-folderbridge" -Target "$(Get-Location)"
+New-Item -ItemType SymbolicLink -Path "C:\path\to\your\vault\.obsidian\plugins\obsidian-multifolder" -Target "$(Get-Location)"
 ```
 
 **Alternative (Copy Method):**
 If symbolic links don't work on your system, you can manually copy files after each build:
 ```bash
 # After running npm run build
-cp main.js manifest.json styles.css "/path/to/your/vault/.obsidian/plugins/obsidian-folderbridge/"
+cp main.js manifest.json styles.css "/path/to/your/vault/.obsidian/plugins/obsidian-multifolder/"
 ```
 
 ## Development Workflow
@@ -103,7 +103,7 @@ npm run build
 npm run check:ui-text
 ```
 - Scans common UI text call-sites such as `setName(...)`, `setDesc(...)`, `setTooltip(...)`, `setButtonText(...)`, `setTitle(...)`, `setText(...)`, and `new Notice(...)`
-- Fails on branding and status-label issues such as `Folder bridge:` prefixes, lowercase text after `Folder Bridge:`, and decorative status icons in reviewer-facing UI text
+- Fails on branding and status-label issues such as `Folder bridge:` prefixes, lowercase text after `Multifolder:`, and decorative status icons in reviewer-facing UI text
 
 #### Full local validation
 ```bash
@@ -181,7 +181,7 @@ To cut a release:
 ## Project Structure
 
 ```
-Obsidian_FolderBridge/
+Obsidian_Multifolder/
 ├── .editorconfig           # Editor configuration
 ├── .eslintrc              # ESLint configuration
 ├── .gitignore             # Git ignore rules
@@ -256,11 +256,11 @@ The current implementation provides a foundation. To implement the virtual files
 
 ### Console Logging
 ```typescript
-console.log('FolderBridge:', 'message', data);
+console.log('Multifolder:', 'message', data);
 ```
 View logs in:
 - Obsidian: Open Developer Console (Ctrl/Cmd + Shift + I)
-- Look for messages prefixed with "FolderBridge:"
+- Look for messages prefixed with "Multifolder:"
 
 ### TypeScript Errors
 ```bash
@@ -288,7 +288,7 @@ npx eslint main.ts --fix
 
 2. **UI Elements**
    - [ ] Ribbon icon appears
-   - [ ] Status bar shows "FolderBridge: Ready"
+   - [ ] Status bar shows "Multifolder: Ready"
    - [ ] Settings tab accessible
 
 3. **Settings**

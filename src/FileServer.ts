@@ -109,7 +109,7 @@ export class FileServer {
             });
 
             srv.on('error', (err) => {
-                logger.error('[FolderBridge] FileServer failed to start:', err);
+                logger.error('[Multifolder] FileServer failed to start:', err);
                 reject(err);
             });
 
@@ -119,7 +119,7 @@ export class FileServer {
                 if (!addr) { srv.close(); reject(new Error('FileServer: address() returned null')); return; }
                 this.port = addr.port;
                 this.server = srv;
-                logger.debug(`[FolderBridge] FileServer listening on 127.0.0.1:${this.port}`);
+                logger.debug(`[Multifolder] FileServer listening on 127.0.0.1:${this.port}`);
                 resolve(true);
             });
         });
@@ -132,7 +132,7 @@ export class FileServer {
         this.server = null;
         this.port = 0;
         this.token = '';
-        logger.debug('[FolderBridge] FileServer stopped');
+        logger.debug('[Multifolder] FileServer stopped');
     }
 
     /** True after a successful start(). */
@@ -282,7 +282,7 @@ export class FileServer {
                 fsMod.createReadStream(nativePath).pipe(res);
             }
         } catch (err) {
-            logger.error('[FolderBridge] FileServer request error:', err);
+            logger.error('[Multifolder] FileServer request error:', err);
             if (!res.headersSent) {
                 res.writeHead(500);
                 res.end('Internal Server Error');

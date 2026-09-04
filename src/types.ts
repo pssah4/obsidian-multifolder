@@ -48,7 +48,7 @@ export interface MountPoint {
 	 * fires its own internal vault events directly — the watcher is bypassed.
 	 *
 	 * You can also toggle suppression at runtime without touching this setting:
-	 *   const fb = app.plugins.getPlugin('folderbridge');
+	 *   const fb = app.plugins.getPlugin('multifolder');
 	 *   fb.setWatcherSuppressed('mountId', true);   // mute one mount
 	 *   fb.setWatcherSuppressed(null, true);         // mute all mounts
 	 *   fb.setWatcherSuppressed(null, false);        // restore all
@@ -115,7 +115,7 @@ export interface MountPoint {
 	tocSourcePath?: string;
 }
 
-export interface FolderBridgeSettings {
+export interface MultifolderSettings {
 	mountPoints: MountPoint[];
 	allowlist: string[];    // Approved real paths (must match before any I/O)
 	managedTocSource: string; // Optional writable TOC file for UI-managed local/vault mounts
@@ -136,7 +136,7 @@ export interface FolderBridgeSettings {
 	hasSeenOnboarding: boolean;
 }
 
-export const DEFAULT_SETTINGS: FolderBridgeSettings = {
+export const DEFAULT_SETTINGS: MultifolderSettings = {
 	mountPoints: [],
 	allowlist: [],
 	managedTocSource: '',

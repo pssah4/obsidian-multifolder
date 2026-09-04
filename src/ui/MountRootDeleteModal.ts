@@ -13,7 +13,7 @@ export class MountRootDeleteModal extends Modal {
 
     private settle(value: 'unmount' | 'delete' | 'unmount-always' | 'delete-always' | 'cancel'): void {
         void Promise.resolve(this.resolve(value)).catch(error => {
-            logger.error('Folder Bridge: Mount root delete callback failed', error);
+            logger.error('Multifolder: Mount root delete callback failed', error);
         });
     }
 
@@ -39,7 +39,7 @@ export class MountRootDeleteModal extends Modal {
                     this.dontAskAgain = value;
                 })
             );
-        const buttonContainer = contentEl.createDiv({ cls: 'folderbridge-modal-buttons' });
+        const buttonContainer = contentEl.createDiv({ cls: 'multifolder-modal-buttons' });
 
         const btnCancel = buttonContainer.createEl('button', { text: 'Cancel' });
         btnCancel.onclick = () => {

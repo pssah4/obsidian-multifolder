@@ -1,5 +1,5 @@
 import { App, DataAdapter, DataWriteOptions, FuzzySuggestModal, Plugin, PluginSettingTab, Setting, Notice, normalizePath, TFolder, TFile } from 'obsidian';
-import { FolderBridgeSettings, MountPoint, DEFAULT_SETTINGS } from './src/types';
+import { MultifolderSettings, MountPoint, DEFAULT_SETTINGS } from './src/types';
 import { PathMapper } from './src/PathMapper';
 import { VirtualAdapter } from './src/VirtualAdapter';
 import { SecurityManager } from './src/SecurityManager';
@@ -53,8 +53,10 @@ type DesktopVaultAdapter = DataAdapter & {
 type ElectronShell = { openPath(p: string): Promise<string> };
 type ElectronModule = { shell?: ElectronShell; default?: { shell?: ElectronShell } };
 
-const GITHUB_REPO_URL = 'https://github.com/tescolopio/Obsidian_FolderBridge';
-const GITHUB_PROFILE_URL = 'https://github.com/tescolopio';
+const GITHUB_REPO_URL = 'https://github.com/pssah4/obsidian-multifolder';
+// Multifolder is a fork. These two point at the original author of Folder Bridge,
+// whose code this is built on; the repository button points at this fork.
+const ORIGINAL_AUTHOR_PROFILE_URL = 'https://github.com/tescolopio';
 const BUY_ME_COFFEE_URL = 'https://buymeacoffee.com/tescolopio';
 
 // ---------------------------------------------------------------------------
@@ -69,9 +71,9 @@ function openExternalUrl(url: string): void {
 	window.open(url, '_blank', 'noopener,noreferrer');
 }
 
-function backgroundTask(task: Promise<void>, context: string, pluginName = 'Folder Bridge'): void {
+function backgroundTask(task: Promise<void>, context: string, pluginName = 'Multifolder'): void {
 	void task.catch(error => {
-		logger.error(`[FolderBridge] ${context}`, error);
+		logger.error(`[Multifolder] ${context}`, error);
 		new Notice(`${pluginName}: a background mount refresh failed. Check the developer console for details.`);
 	});
 }
@@ -80,8 +82,8 @@ function backgroundTask(task: Promise<void>, context: string, pluginName = 'Fold
 // Plugin
 // ---------------------------------------------------------------------------
 
-export default class FolderBridgePlugin extends Plugin {
-	settings: FolderBridgeSettings;
+export default class MultifolderPlugin extends Plugin {
+	settings: MultifolderSettings;
 	pathMapper: PathMapper;
 	security: SecurityManager;
 	virtualAdapter: VirtualAdapter | null = null;
@@ -163,7 +165,7 @@ export default class FolderBridgePlugin extends Plugin {
 		if (!path) return null;
 		const adapter = this.app.vault.adapter as DesktopVaultAdapter;
 		const basePath = typeof adapter.getBasePath === 'function' ? adapter.getBasePath() : '';
-		return basePath ? path.join(basePath, 'folderbridge.managed.json') : null;
+		return basePath ? path.join(basePath, 'multifolder.managed.json') : null;
 	}
 
 	getSuggestedManagedTocPath(): string | null {
@@ -200,7 +202,7 @@ export default class FolderBridgePlugin extends Plugin {
 		}
 		const unsupportedMount = mounts.find(mount => this.isCloudMount(mount));
 		if (unsupportedMount) {
-			new Notice(`Folder Bridge: Managed TOC files currently support only local and vault mounts. "${unsupportedMount.label || unsupportedMount.virtualPath}" stays in data.json.`);
+			new Notice(`Multifolder: Managed TOC files currently support only local and vault mounts. "${unsupportedMount.label || unsupportedMount.virtualPath}" stays in data.json.`);
 			return false;
 		}
 
@@ -231,7 +233,7 @@ export default class FolderBridgePlugin extends Plugin {
 		} catch (error) {
 			this.settings.managedTocSource = previousSource;
 			const message = error instanceof Error ? error.message : String(error);
-			new Notice(`Folder Bridge: Failed to initialize managed TOC file (${message}).`);
+			new Notice(`Multifolder: Failed to initialize managed TOC file (${message}).`);
 			return false;
 		}
 	}
@@ -381,7 +383,7 @@ export default class FolderBridgePlugin extends Plugin {
 			this.updateIgnoreCache();
 			if (notifyOnWarnings) {
 				for (const warning of this.tocWarnings) {
-					new Notice(`Folder Bridge: ${warning}`);
+					new Notice(`Multifolder: ${warning}`);
 				}
 			}
 			return;
@@ -441,7 +443,7 @@ export default class FolderBridgePlugin extends Plugin {
 
 		if (notifyOnWarnings) {
 			for (const warning of warnings) {
-				new Notice(`Folder Bridge: ${warning}`);
+				new Notice(`Multifolder: ${warning}`);
 			}
 		}
 	}
@@ -471,14 +473,14 @@ export default class FolderBridgePlugin extends Plugin {
 			}
 			this.virtualAdapter?.setFileServer(this.fileServer);
 		}).catch(err => {
-			logger.warn('[FolderBridge] FileServer failed to start (video streaming unavailable):', err);
+			logger.warn('[Multifolder] FileServer failed to start (video streaming unavailable):', err);
 		});
 
 		// Ribbon icon opens the add-mount modal
 		const ribbonIconEl = this.addRibbonIcon('folder-plus', `${this.manifest.name}: add mount`, () => {
 			new MountManagerModal(this.app, this.manifest.name, this.security, (mount) => this.addMount(mount)).open();
 		});
-		ribbonIconEl.addClass('folderbridge-ribbon-class');
+		ribbonIconEl.addClass('multifolder-ribbon-class');
 
 		// Status bar
 		if (this.settings.showStatusBar) {
@@ -487,7 +489,7 @@ export default class FolderBridgePlugin extends Plugin {
 		}
 
 		// Settings tab
-		this.addSettingTab(new FolderBridgeSettingTab(this.app, this));
+		this.addSettingTab(new MultifolderSettingTab(this.app, this));
 
 		// Add a command to manually refresh mounts
 		this.addCommand({
@@ -518,7 +520,7 @@ export default class FolderBridgePlugin extends Plugin {
 			name: 'Open settings',
 			callback: () => {
 				(this.app as App & AppInternal).setting?.open?.();
-				(this.app as App & AppInternal).setting?.openTabById?.('folderbridge');
+				(this.app as App & AppInternal).setting?.openTabById?.('multifolder');
 			},
 		});
 
@@ -536,7 +538,7 @@ export default class FolderBridgePlugin extends Plugin {
 				}
 				// Inline FuzzySuggestModal — avoids a separate file for a small feature
 				const modal = new (class extends FuzzySuggestModal<MountPoint> {
-					constructor(app: App, private readonly outerPlugin: FolderBridgePlugin) { super(app); }
+					constructor(app: App, private readonly outerPlugin: MultifolderPlugin) { super(app); }
 					getItems() { return myMounts; }
 					getItemText(m: MountPoint) {
 						const status = m.enabled ? '✅' : '⏸';
@@ -553,9 +555,9 @@ export default class FolderBridgePlugin extends Plugin {
 							this.outerPlugin.updateStatusBar();
 							if (enabling) {
 								await this.outerPlugin.notifyVaultMountAdded(m);
-								new Notice(`Folder Bridge: "${m.label || m.virtualPath}" Enabled.`);
+								new Notice(`Multifolder: "${m.label || m.virtualPath}" Enabled.`);
 							} else {
-								new Notice(`Folder Bridge: "${m.label || m.virtualPath}" Disabled.`);
+								new Notice(`Multifolder: "${m.label || m.virtualPath}" Disabled.`);
 							}
 						})();
 					}
@@ -585,7 +587,7 @@ export default class FolderBridgePlugin extends Plugin {
 							reconnected++;
 						} catch { /* individual failure already noticed inside reconnectMount */ }
 					}
-					new Notice(`Folder Bridge: Reconnected ${reconnected} / ${unreachable.length} mount(s).`);
+					new Notice(`Multifolder: Reconnected ${reconnected} / ${unreachable.length} mount(s).`);
 				})();
 			},
 		});
@@ -606,7 +608,7 @@ export default class FolderBridgePlugin extends Plugin {
 					for (const m of myMounts) {
 						await this.setMountReadOnly(m.id, anyWritable, /* skipNotice */ true);
 					}
-					new Notice(`Folder Bridge: All mounts are now ${anyWritable ? 'read-only' : 'writable'}.`);
+					new Notice(`Multifolder: All mounts are now ${anyWritable ? 'read-only' : 'writable'}.`);
 				})();
 			},
 		});
@@ -624,7 +626,7 @@ export default class FolderBridgePlugin extends Plugin {
 					return;
 				}
 				const modal = new (class extends FuzzySuggestModal<MountPoint> {
-					constructor(app: App, private readonly outerPlugin: FolderBridgePlugin) { super(app); }
+					constructor(app: App, private readonly outerPlugin: MultifolderPlugin) { super(app); }
 					getItems() { return myMounts; }
 					getItemText(m: MountPoint) {
 						const state = m.readOnly ? 'Read-only' : 'Writable';
@@ -647,7 +649,7 @@ export default class FolderBridgePlugin extends Plugin {
 				const wasSuppressed = this.fileWatcher?.isSuppressedAll() ?? false;
 				this.setWatcherSuppressed(null, !wasSuppressed);
 				new Notice(
-					`Folder Bridge: Watcher events ${!wasSuppressed ? 'suppressed. External-sync changes will not trigger other plugins.' : 'restored. External-sync changes will trigger other plugins again.'}`
+					`Multifolder: Watcher events ${!wasSuppressed ? 'suppressed. External-sync changes will not trigger other plugins.' : 'restored. External-sync changes will trigger other plugins again.'}`
 				);
 			},
 		});
@@ -665,7 +667,7 @@ export default class FolderBridgePlugin extends Plugin {
 					return;
 				}
 				const modal = new (class extends FuzzySuggestModal<MountPoint> {
-					constructor(app: App, private readonly outerPlugin: FolderBridgePlugin) { super(app); }
+					constructor(app: App, private readonly outerPlugin: MultifolderPlugin) { super(app); }
 					getItems() { return myMounts; }
 					getItemText(m: MountPoint) {
 						const suppressed = this.outerPlugin.fileWatcher?.isSuppressed(m.id) ?? false;
@@ -675,7 +677,7 @@ export default class FolderBridgePlugin extends Plugin {
 						const suppressed = this.outerPlugin.fileWatcher?.isSuppressed(m.id) ?? false;
 						this.outerPlugin.setWatcherSuppressed(m.id, !suppressed);
 						new Notice(
-							`Folder Bridge: Watcher events for "${m.label || m.virtualPath}" ${!suppressed ? 'suppressed' : 'restored'}.`
+							`Multifolder: Watcher events for "${m.label || m.virtualPath}" ${!suppressed ? 'suppressed' : 'restored'}.`
 						);
 					}
 				})(this.app, this);
@@ -715,7 +717,7 @@ export default class FolderBridgePlugin extends Plugin {
 
 				menu.addItem((item) => {
 					item
-						.setTitle(`Ignore "${file.name}" in Folder Bridge`)
+						.setTitle(`Ignore "${file.name}" in Multifolder`)
 						.setIcon('eye-off')
 						.onClick(() => {
 							void (async () => {
@@ -723,7 +725,7 @@ export default class FolderBridgePlugin extends Plugin {
 									if (!mount.ignoreList) mount.ignoreList = [];
 									mount.ignoreList.push(file.name);
 									await this.saveSettings();
-									new Notice(`Folder Bridge: Added "${file.name}" to ignore list for mount "${mount.virtualPath}".`);
+									new Notice(`Multifolder: Added "${file.name}" to ignore list for mount "${mount.virtualPath}".`);
 
 									// Remove it from the vault view immediately
 									const vault = this.app.vault as typeof this.app.vault & VaultInternal;
@@ -735,11 +737,11 @@ export default class FolderBridgePlugin extends Plugin {
 												await vault.onChange('file-removed', file.path, null, null);
 											}
 										} catch (e) {
-											logger.debug('Folder Bridge: Failed to remove ignored item from view', e);
+											logger.debug('Multifolder: Failed to remove ignored item from view', e);
 										}
 									}
 								} else {
-									new Notice(`Folder Bridge: "${file.name}" is already in the ignore list for this mount.`);
+									new Notice(`Multifolder: "${file.name}" is already in the ignore list for this mount.`);
 								}
 							})();
 						});
@@ -813,7 +815,7 @@ export default class FolderBridgePlugin extends Plugin {
 			})();
 		});
 
-		logger.debug(`Folder Bridge Loaded (${getPlatform()}, ${this.settings.mountPoints.filter(m => m.enabled && (m.deviceId === this.settings.deviceId || this.settings.allowForeignMounts)).length} active mounts on this device)`);
+		logger.debug(`Multifolder Loaded (${getPlatform()}, ${this.settings.mountPoints.filter(m => m.enabled && (m.deviceId === this.settings.deviceId || this.settings.allowForeignMounts)).length} active mounts on this device)`);
 	}
 
 	onunload() {
@@ -856,7 +858,7 @@ export default class FolderBridgePlugin extends Plugin {
 		// Stop the localhost streaming server
 		this.fileServer.stop();
 
-		logger.debug('Folder Bridge Unloaded');
+		logger.debug('Multifolder Unloaded');
 	}
 
 	// ------------------------------------------------------------------
@@ -1002,7 +1004,7 @@ export default class FolderBridgePlugin extends Plugin {
 			//
 			// Obsidian's own file-system watcher only monitors the vault directory, so
 			// it never fires vault.onChange('raw', …) for writes to external mount paths.
-			// FolderBridge's Chokidar watcher covers external changes from other apps,
+			// Multifolder's Chokidar watcher covers external changes from other apps,
 			// but on Windows network/mapped drives (SMB) native ReadDirectoryChangesW
 			// events often don't propagate — so Chokidar misses writes that originate
 			// inside Obsidian too (e.g. Bases editing frontmatter).  The net effect is
@@ -1126,10 +1128,10 @@ export default class FolderBridgePlugin extends Plugin {
 					const electron = loadOptionalNodeModule<ElectronModule>('electron');
 					const shellApi: ElectronShell | undefined = electron?.shell ?? electron?.default?.shell;
 					shellApi?.openPath(realPath).catch((e: unknown) => {
-						logger.warn('[Folder Bridge] openWithDefaultApp shell.openPath failed:', e);
+						logger.warn('[Multifolder] openWithDefaultApp shell.openPath failed:', e);
 					});
 				} catch (e) {
-					logger.warn('[Folder Bridge] openWithDefaultApp: electron not available', e);
+					logger.warn('[Multifolder] openWithDefaultApp: electron not available', e);
 				}
 				return;
 			}
@@ -1175,7 +1177,7 @@ export default class FolderBridgePlugin extends Plugin {
 				// Original vault.create() might reject due to a failed filesystem check
 				// against the vault physical directory (the real file is in the mount).
 				// We swallow the error and fall through to manual registration.
-				logger.debug('[Folder Bridge] vault.create() rejected for virtual path, using manual registration:', e);
+				logger.debug('[Multifolder] vault.create() rejected for virtual path, using manual registration:', e);
 			}
 
 			// If the original call already registered the TFile, return it.
@@ -1208,7 +1210,7 @@ export default class FolderBridgePlugin extends Plugin {
 			try {
 				await (this.originalVaultCreateBinary as OrigVaultCreateBinary)(path, data, options);
 			} catch (e) {
-				logger.debug('[Folder Bridge] vault.createBinary() rejected for virtual path, using manual registration:', e);
+				logger.debug('[Multifolder] vault.createBinary() rejected for virtual path, using manual registration:', e);
 			}
 
 			const existingBin = this.app.vault.getAbstractFileByPath(nPath);
@@ -1241,14 +1243,14 @@ export default class FolderBridgePlugin extends Plugin {
 		// Validate against existing mounts; cloud mounts skip local-path validation
 		const error = this.security.validateMount(mountData, existingMounts);
 		if (error) {
-			new Notice(`Folder Bridge: ${error}`);
+			new Notice(`Multifolder: ${error}`);
 			return;
 		}
 		if (!isCloud) {
 			// Surface advisory warnings (UNC paths, real-path overlaps) for local mounts
 			const warnings = this.security.getPathWarnings(mountData.realPath, existingMounts, mountType);
 			for (const w of warnings) {
-				new Notice(`Folder Bridge warning: ${w}`, 10_000);
+				new Notice(`Multifolder warning: ${w}`, 10_000);
 			}
 		}
 
@@ -1356,7 +1358,7 @@ export default class FolderBridgePlugin extends Plugin {
 		} else {
 			mountLabel = `"${runtimeMount.realPath}" → "${runtimeMount.virtualPath}"`;
 		}
-		new Notice(`Folder Bridge: Mounted ${mountLabel}`);
+		new Notice(`Multifolder: Mounted ${mountLabel}`);
 	}
 
 	async removeMount(id: string): Promise<void> {
@@ -1379,7 +1381,7 @@ export default class FolderBridgePlugin extends Plugin {
 			await this.refreshTocMountSources(true);
 			await this.saveSettings();
 			this.updateStatusBar();
-			new Notice(`Folder Bridge: Removed mount "${mount.virtualPath}".`);
+			new Notice(`Multifolder: Removed mount "${mount.virtualPath}".`);
 			return;
 		}
 
@@ -1431,7 +1433,7 @@ export default class FolderBridgePlugin extends Plugin {
 		this.syncEffectiveMountState();
 		this.updateStatusBar();
 
-		new Notice(`Folder Bridge: Removed mount "${mount.virtualPath}".`);
+		new Notice(`Multifolder: Removed mount "${mount.virtualPath}".`);
 	}
 
 	/**
@@ -1451,7 +1453,7 @@ export default class FolderBridgePlugin extends Plugin {
 			await this.saveSettings();
 			this.syncEffectiveMountState();
 			if (!skipNotice) {
-				new Notice(`Folder Bridge: “${mount.label || mount.virtualPath}” is now ${readOnly ? 'read-only' : 'writable'}.`);
+				new Notice(`Multifolder: “${mount.label || mount.virtualPath}” is now ${readOnly ? 'read-only' : 'writable'}.`);
 			}
 			return;
 		}
@@ -1471,7 +1473,7 @@ export default class FolderBridgePlugin extends Plugin {
 		await this.saveSettings();
 		const updatedMount = this.settings.mountPoints.find(existing => existing.id === id);
 		if (!skipNotice && updatedMount) {
-			new Notice(`Folder Bridge: “${updatedMount.label || updatedMount.virtualPath}” is now ${readOnly ? 'read-only' : 'writable'}.`);
+			new Notice(`Multifolder: “${updatedMount.label || updatedMount.virtualPath}” is now ${readOnly ? 'read-only' : 'writable'}.`);
 		}
 	}
 
@@ -1485,7 +1487,7 @@ export default class FolderBridgePlugin extends Plugin {
 			const otherMounts = this.settings.mountPoints.filter(m => m.id !== id);
 			const error = this.security.validateMount(newData, otherMounts);
 			if (error) {
-				new Notice(`Folder Bridge: ${error}`);
+				new Notice(`Multifolder: ${error}`);
 				return;
 			}
 
@@ -1535,7 +1537,7 @@ export default class FolderBridgePlugin extends Plugin {
 				this.fileWatcher?.startWatching(updatedMount);
 			}
 
-			new Notice(`Folder Bridge: Updated "${updatedMount.virtualPath}".`);
+			new Notice(`Multifolder: Updated "${updatedMount.virtualPath}".`);
 			return;
 		}
 
@@ -1545,7 +1547,7 @@ export default class FolderBridgePlugin extends Plugin {
 		const otherMounts = this.settings.mountPoints.filter(m => m.id !== id);
 		const error = this.security.validateMount(newData, otherMounts);
 		if (error) {
-			new Notice(`Folder Bridge: ${error}`);
+			new Notice(`Multifolder: ${error}`);
 			return;
 		}
 
@@ -1676,7 +1678,7 @@ export default class FolderBridgePlugin extends Plugin {
 			clearSessionCredential('sftp-pp', id);
 		}
 
-		new Notice(`Folder Bridge: Updated "${updatedMount.virtualPath}".`);
+		new Notice(`Multifolder: Updated "${updatedMount.virtualPath}".`);
 	}
 
 	// ------------------------------------------------------------------
@@ -1710,14 +1712,14 @@ export default class FolderBridgePlugin extends Plugin {
 			try {
 				await vault.onChange('folder-created', partPath, null, null);
 			} catch (e) {
-				logger.debug('Folder Bridge: vault.onChange(folder-created) unavailable', e);
+				logger.debug('Multifolder: vault.onChange(folder-created) unavailable', e);
 			}
 		}
 
 		// Recursively notify Obsidian about all files and folders inside the mount
 		const suppressionEnabled = !!mount.watcherSuppressAllEvents;
 
-		const notice = new Notice(`Folder Bridge: Scanning and mounting "${mount.virtualPath}"...`, 0);
+		const notice = new Notice(`Multifolder: Scanning and mounting "${mount.virtualPath}"...`, 0);
 		const { fileCount, folderCount, scanLimitHit } = await replayMountContentsToVault(mount, {
 			list: (folderPath) => this.app.vault.adapter.list(folderPath),
 			stat: (filePath) => this.app.vault.adapter.stat(filePath),
@@ -1726,29 +1728,29 @@ export default class FolderBridgePlugin extends Plugin {
 			onFolderCreated: (path) => vault.onChange('folder-created', path, null, null),
 			onFileCreated: (path, stat) => vault.onChange('file-created', path, null, stat),
 			onHugeMount: () => {
-				new Notice(`Folder Bridge: "${mount.virtualPath}" is very large. This may take a moment...`);
+				new Notice(`Multifolder: "${mount.virtualPath}" is very large. This may take a moment...`);
 			},
 			onError: (folderPath, error) => {
-				logger.debug(`Folder Bridge: Failed to list ${folderPath}`, error);
+				logger.debug(`Multifolder: Failed to list ${folderPath}`, error);
 			},
 		});
 		notice.hide();
 		if (scanLimitHit) {
 			const scanLimit = mount.maxFiles ?? 0;
 			new Notice(
-				`Folder Bridge: Scan limit (${scanLimit.toLocaleString()} items) reached for "${mount.virtualPath}". ` +
+				`Multifolder: Scan limit (${scanLimit.toLocaleString()} items) reached for "${mount.virtualPath}". ` +
 				`Increase "Max files" in mount advanced settings to surface more.`,
 				10000
 			);
 		}
 		if (suppressionEnabled) {
-			new Notice(`Folder Bridge: Mounted "${mount.virtualPath}" with external file events suppressed.`);
+			new Notice(`Multifolder: Mounted "${mount.virtualPath}" with external file events suppressed.`);
 		} else {
-			new Notice(`Folder Bridge: Mounted ${folderCount} folders and ${fileCount} files in "${mount.virtualPath}".`);
+			new Notice(`Multifolder: Mounted ${folderCount} folders and ${fileCount} files in "${mount.virtualPath}".`);
 			try {
 				await vault.onChange('raw', normalizePath(mount.virtualPath), null, null);
 			} catch (e) {
-				logger.debug('Folder Bridge: vault.onChange(raw) unavailable', e);
+				logger.debug('Multifolder: vault.onChange(raw) unavailable', e);
 			}
 		}
 
@@ -1804,10 +1806,10 @@ export default class FolderBridgePlugin extends Plugin {
 			for (const child of [...folder.children]) {
 				if (child instanceof TFolder) {
 					await recursivelyRemoveVault(child);
-					logger.debug(`[FolderBridge] Removing folder from UI: ${child.path}`);
+					logger.debug(`[Multifolder] Removing folder from UI: ${child.path}`);
 					await vault.onChange('folder-removed', child.path, null, null);
 				} else {
-					logger.debug(`[FolderBridge] Removing file from UI: ${child.path}`);
+					logger.debug(`[Multifolder] Removing file from UI: ${child.path}`);
 					await vault.onChange('file-removed', child.path, null, null);
 				}
 			}
@@ -1818,10 +1820,10 @@ export default class FolderBridgePlugin extends Plugin {
 		}
 
 		try {
-			logger.debug(`[FolderBridge] Removing root mount folder from UI: ${nPath}`);
+			logger.debug(`[Multifolder] Removing root mount folder from UI: ${nPath}`);
 			await vault.onChange('folder-removed', nPath, null, null);
 		} catch (e) {
-			logger.debug('Folder Bridge: vault.onChange(folder-removed) unavailable', e);
+			logger.debug('Multifolder: vault.onChange(folder-removed) unavailable', e);
 		}
 	}
 
@@ -1858,7 +1860,7 @@ export default class FolderBridgePlugin extends Plugin {
 							await vault.onChange('file-removed', child.path, null, null);
 						}
 					} catch (e) {
-						logger.debug('Folder Bridge: Failed to remove ignored item from vault view', e);
+						logger.debug('Multifolder: Failed to remove ignored item from vault view', e);
 					}
 				} else if (child instanceof TFolder) {
 					await recursivelyRemoveIgnored(child);
@@ -1919,13 +1921,13 @@ export default class FolderBridgePlugin extends Plugin {
 					anyChanged = true;
 					if (!reachable && prev === true) {
 						new Notice(
-							`Folder Bridge: "${mount.label || mount.virtualPath}" is unreachable. ` +
+							`Multifolder: "${mount.label || mount.virtualPath}" is unreachable. ` +
 							`Check that the path exists and is accessible on this device.`,
 							8000
 						);
 					} else if (reachable && prev === false) {
 						new Notice(
-							`Folder Bridge: "${mount.label || mount.virtualPath}" is back online.`,
+							`Multifolder: "${mount.label || mount.virtualPath}" is back online.`,
 							4000
 						);
 					}
@@ -1968,7 +1970,7 @@ export default class FolderBridgePlugin extends Plugin {
 		this.mountHealthMap.set(mount.id, reachable);
 
 		if (!reachable) {
-			new Notice(`Folder Bridge: "${mount.label || mount.virtualPath}" is still unreachable.`, 5000);
+			new Notice(`Multifolder: "${mount.label || mount.virtualPath}" is still unreachable.`, 5000);
 			this.updateStatusBar();
 			return;
 		}
@@ -1976,7 +1978,7 @@ export default class FolderBridgePlugin extends Plugin {
 		// Clean up any stale vault-tree remnants before re-injecting
 		await this.notifyVaultMountRemoved(mount);
 		await this.notifyVaultMountAdded(mount);
-		new Notice(`Folder Bridge: "${mount.label || mount.virtualPath}" reconnected successfully.`);
+		new Notice(`Multifolder: "${mount.label || mount.virtualPath}" reconnected successfully.`);
 		this.updateStatusBar();
 	}
 
@@ -1991,7 +1993,7 @@ export default class FolderBridgePlugin extends Plugin {
 	 *
 	 * **Why this is useful:** External sync tools (Obsidian Sync, rclone, rsync,
 	 * Syncthing…) write files directly to the bridged folder on disk.  Chokidar
-	 * detects those writes and FolderBridge forwards them as vault events, which
+	 * detects those writes and Multifolder forwards them as vault events, which
 	 * causes attachment-rename or note-refactor plugins to react as if the files
 	 * were freshly created by the user.  By muting events around a sync window
 	 * you prevent those spurious reactions while still letting user-initiated
@@ -2000,12 +2002,12 @@ export default class FolderBridgePlugin extends Plugin {
 	 *
 	 * **Usage from external scripts** (Templater, JS Engine, QuickAdd, etc.):
 	 * ```js
-	 * const fb = app.plugins.getPlugin('folderbridge');
+	 * const fb = app.plugins.getPlugin('multifolder');
 	 * fb.setWatcherSuppressed(null, true);           // mute all mounts
 	 * // … wait for sync to finish …
 	 * fb.setWatcherSuppressed(null, false);          // restore all mounts
 	 *
-	 * // Or target a single mount by its id (visible in Folder Bridge settings):
+	 * // Or target a single mount by its id (visible in Multifolder settings):
 	 * fb.setWatcherSuppressed('abc123def', true);
 	 * ```
 	 *
@@ -2024,15 +2026,15 @@ export default class FolderBridgePlugin extends Plugin {
 		const allSuppressed = this.fileWatcher?.isSuppressedAll() ?? false;
 		if (allSuppressed) {
 			this.statusBarItem.setText(`${this.manifest.name}: events paused`);
-			this.statusBarItem.classList.remove('folderbridge-status-warning');
-			this.statusBarItem.classList.add('folderbridge-status-suppressed');
+			this.statusBarItem.classList.remove('multifolder-status-warning');
+			this.statusBarItem.classList.add('multifolder-status-suppressed');
 		} else if (unreachableCount > 0) {
-			this.statusBarItem.setText(`Folder Bridge: ${unreachableCount} unreachable`);
-			this.statusBarItem.classList.remove('folderbridge-status-suppressed');
-			this.statusBarItem.classList.add('folderbridge-status-warning');
+			this.statusBarItem.setText(`Multifolder: ${unreachableCount} unreachable`);
+			this.statusBarItem.classList.remove('multifolder-status-suppressed');
+			this.statusBarItem.classList.add('multifolder-status-warning');
 		} else {
-			this.statusBarItem.setText(`Folder Bridge: ${active} mount${active !== 1 ? 's' : ''}`);
-			this.statusBarItem.classList.remove('folderbridge-status-suppressed', 'folderbridge-status-warning');
+			this.statusBarItem.setText(`Multifolder: ${active} mount${active !== 1 ? 's' : ''}`);
+			this.statusBarItem.classList.remove('multifolder-status-suppressed', 'multifolder-status-warning');
 		}
 	}
 
@@ -2060,7 +2062,7 @@ export default class FolderBridgePlugin extends Plugin {
 		}
 
 		// Back-compat: migrate global ignoreList to per-mount ignoreList
-		const legacySettings = this.settings as FolderBridgeSettings & Record<string, unknown>;
+		const legacySettings = this.settings as MultifolderSettings & Record<string, unknown>;
 		if (legacySettings['ignoreList'] && Array.isArray(legacySettings['ignoreList'])) {
 			const legacyIgnoreList = legacySettings['ignoreList'] as string[];
 			for (const m of this.persistedMountPoints) {
@@ -2103,13 +2105,13 @@ export default class FolderBridgePlugin extends Plugin {
 // Settings tab
 // ---------------------------------------------------------------------------
 
-class FolderBridgeSettingTab extends PluginSettingTab {
-	plugin: FolderBridgePlugin;
+class MultifolderSettingTab extends PluginSettingTab {
+	plugin: MultifolderPlugin;
 	private selectedIgnoreMountId: string | null = null;
 	/** ID of the mount row being dragged (for reorder drag-drop). */
 	private dragSrcId: string | null = null;
 
-	constructor(app: App, plugin: FolderBridgePlugin) {
+	constructor(app: App, plugin: MultifolderPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -2130,20 +2132,23 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 		const dsStore = '.DS_Store';
 		const ctrlCmd = 'Ctrl / Cmd';
 		const ghRepo = 'repo';
-		const moreProj = 'projects';
+		const origAuthor = 'author';
+		// Proper nouns live in consts so the sentence-case check skips the string.
+		const origAuthorName = 'Tim Escolopio';
+		const upstreamName = 'Folder Bridge';
 		const buyMe = 'me a coffee';
 
 		// ── Header ──────────────────────────────────────────────────────
 
-		const infoDiv = containerEl.createDiv('folderbridge-info-box');
+		const infoDiv = containerEl.createDiv('multifolder-info-box');
 
 		infoDiv.createEl('p', {
 			text: `Platform: ${getPlatform()} | Device ID: ${this.plugin.settings.deviceId.substring(0, 8)}`,
-			cls: 'setting-item-description folderbridge-info-meta',
+			cls: 'setting-item-description multifolder-info-meta',
 		});
 
 		const syncWarning = infoDiv.createEl('p', {
-			cls: 'setting-item-description folderbridge-sync-warning',
+			cls: 'setting-item-description multifolder-sync-warning',
 		});
 		syncWarning.createEl('strong', { text: 'Sync warning:' });
 		syncWarning.appendText(' If you use Obsidian Sync or Syncthing, you ');
@@ -2241,18 +2246,18 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 
 					new Setting(containerEl)
 						.setName(`Support ${pluginName}`)
-						.setDesc('Follow ongoing work, browse other projects, or star the repository on GitHub.')
+						.setDesc('Star this fork on GitHub, or support the author of the plugin it is based on.')
 						.addButton(btn => btn
 							.setButtonText(`GitHub ${ghRepo}`)
 							.setTooltip(`Open the ${pluginName} repository`)
 							.onClick(() => openExternalUrl(GITHUB_REPO_URL)))
 						.addButton(btn => btn
-							.setButtonText(`More ${moreProj}`)
-							.setTooltip('Open the author GitHub profile')
-							.onClick(() => openExternalUrl(GITHUB_PROFILE_URL)))
+							.setButtonText(`Original ${origAuthor}`)
+							.setTooltip(`Open the GitHub profile of ${origAuthorName}, author of ${upstreamName}`)
+							.onClick(() => openExternalUrl(ORIGINAL_AUTHOR_PROFILE_URL)))
 						.addButton(btn => btn
 							.setButtonText(`☕ Buy ${buyMe}`)
-							.setTooltip('Support development with a coffee')
+							.setTooltip(`Support ${origAuthorName}, who wrote the plugin this fork is based on`)
 							.onClick(() => openExternalUrl(BUY_ME_COFFEE_URL)));
 				}));
 
@@ -2265,7 +2270,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 			.setDesc('Patterns applied to every mount. Same syntax as per-mount patterns: plain names match any leaf, globs (*.tmp) match leaf names, paths with / match subtrees. Pre-populated with common OS noise files.')
 			.setHeading();
 
-		const globalIgnoreContainer = containerEl.createDiv('folderbridge-global-ignore');
+		const globalIgnoreContainer = containerEl.createDiv('multifolder-global-ignore');
 
 		const renderGlobalIgnoreList = () => {
 			globalIgnoreContainer.empty();
@@ -2277,7 +2282,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 				});
 			}
 			for (const item of list) {
-				const itemEl = globalIgnoreContainer.createDiv('folderbridge-ignore-item');
+				const itemEl = globalIgnoreContainer.createDiv('multifolder-ignore-item');
 				itemEl.createSpan({ text: item });
 				const removeBtn = itemEl.createEl('button', { text: 'Remove' });
 				removeBtn.onclick = () => {
@@ -2289,7 +2294,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 					})();
 				};
 			}
-			const addContainer = globalIgnoreContainer.createDiv('folderbridge-ignore-add');
+			const addContainer = globalIgnoreContainer.createDiv('multifolder-ignore-add');
 			const inputEl = addContainer.createEl('input', { type: 'text', placeholder: 'e.g. .DS_Store, Thumbs.db, *.tmp, node_modules' });
 			const addBtn = addContainer.createEl('button', { text: 'Add' });
 			addBtn.onclick = () => {
@@ -2348,7 +2353,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 
 			const selectedMount = editableMounts.find(m => m.id === this.selectedIgnoreMountId);
 			if (selectedMount) {
-				const ignoreListContainer = containerEl.createDiv('folderbridge-ignore-list');
+				const ignoreListContainer = containerEl.createDiv('multifolder-ignore-list');
 
 				const renderIgnoreList = () => {
 					ignoreListContainer.empty();
@@ -2359,7 +2364,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 					}
 
 					for (const item of list) {
-						const itemEl = ignoreListContainer.createDiv('folderbridge-ignore-item');
+						const itemEl = ignoreListContainer.createDiv('multifolder-ignore-item');
 						itemEl.createSpan({ text: item });
 
 						const removeBtn = itemEl.createEl('button', { text: 'Remove' });
@@ -2372,7 +2377,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 						};
 					}
 
-					const addContainer = ignoreListContainer.createDiv('folderbridge-ignore-add');
+					const addContainer = ignoreListContainer.createDiv('multifolder-ignore-add');
 
 					const inputEl = addContainer.createEl('input', { type: 'text', placeholder: 'Name (e.g. .DS_Store) or path (e.g. vendor/cache)' });
 
@@ -2407,7 +2412,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 								await this.plugin.persistEditableMountFromState(selectedMount);
 								await this.plugin.applyIgnoreListToVault(selectedMount);
 								renderIgnoreList();
-								new Notice(`Folder Bridge: Added ${added} item${added === 1 ? '' : 's'} to the ignore list.`);
+								new Notice(`Multifolder: Added ${added} item${added === 1 ? '' : 's'} to the ignore list.`);
 							}
 						})();
 					};
@@ -2447,7 +2452,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 			.setDesc(`Optional writable JSON file for local and vault mounts created from the ${pluginName} UI. When set, new local and vault mounts are written there instead of data.json.`)
 			.setHeading();
 
-		const managedTocContainer = containerEl.createDiv('folderbridge-toc-sources');
+		const managedTocContainer = containerEl.createDiv('multifolder-toc-sources');
 		const renderManagedToc = () => {
 			managedTocContainer.empty();
 			const currentPath = this.plugin.settings.managedTocSource.trim();
@@ -2465,10 +2470,10 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 				});
 			}
 
-			const addRow = managedTocContainer.createDiv('folderbridge-ignore-add');
+			const addRow = managedTocContainer.createDiv('multifolder-ignore-add');
 			const inputEl = addRow.createEl('input', {
 				type: 'text',
-				placeholder: 'Absolute path to a writable TOC JSON file, e.g. /home/me/folderbridge.managed.json',
+				placeholder: 'Absolute path to a writable TOC JSON file, e.g. /home/me/multifolder.managed.json',
 			});
 			inputEl.value = currentPath || suggestedPath || '';
 
@@ -2488,9 +2493,9 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 						const result = await this.plugin.createManagedTocFromCurrentMounts(inputEl.value);
 						if (!result.success || !result.targetPath) return;
 						if (result.moved > 0 || result.skipped > 0) {
-							new Notice(`Folder Bridge: Created ${result.targetPath} and moved ${result.moved} local/vault mount(s) into it.${result.skipped ? ` ${result.skipped} cloud mount(s) stayed in data.json.` : ''}`);
+							new Notice(`Multifolder: Created ${result.targetPath} and moved ${result.moved} local/vault mount(s) into it.${result.skipped ? ` ${result.skipped} cloud mount(s) stayed in data.json.` : ''}`);
 						} else {
-							new Notice(`Folder Bridge: Created ${result.targetPath}. New local and vault mounts will be written there.`);
+							new Notice(`Multifolder: Created ${result.targetPath}. New local and vault mounts will be written there.`);
 						}
 						this.display();
 					})();
@@ -2511,7 +2516,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 					void (async () => {
 						const result = await this.plugin.migrateLocalManualMountsToManagedToc();
 						if (result.moved > 0 || result.skipped > 0) {
-							new Notice(`Folder Bridge: Moved ${result.moved} local/vault mount(s) to the managed TOC file.${result.skipped ? ` ${result.skipped} cloud mount(s) stayed in data.json.` : ''}`);
+							new Notice(`Multifolder: Moved ${result.moved} local/vault mount(s) to the managed TOC file.${result.skipped ? ` ${result.skipped} cloud mount(s) stayed in data.json.` : ''}`);
 						} else {
 							new Notice(`${this.plugin.manifest.name}: no local or vault UI mounts needed migration.`);
 						}
@@ -2532,7 +2537,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 			text: `External ${toc} files are desktop-only and remain authoritative. Mounts loaded from these files appear below but must be edited in their source file.`,
 			cls: 'setting-item-description',
 		});
-		tocInfo.addClass('folderbridge-setting-note');
+		tocInfo.addClass('multifolder-setting-note');
 
 		const tocWarnings = this.plugin.getTocWarnings();
 		if (tocWarnings.length > 0) {
@@ -2542,7 +2547,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 			}
 		}
 
-		const tocContainer = containerEl.createDiv('folderbridge-toc-sources');
+		const tocContainer = containerEl.createDiv('multifolder-toc-sources');
 		const renderTocSources = () => {
 			tocContainer.empty();
 			if (this.plugin.settings.tocSources.length === 0) {
@@ -2553,7 +2558,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 			}
 
 			for (const source of this.plugin.settings.tocSources) {
-				const row = tocContainer.createDiv('folderbridge-ignore-item');
+				const row = tocContainer.createDiv('multifolder-ignore-item');
 				row.createSpan({ text: source });
 				const removeBtn = row.createEl('button', { text: 'Remove' });
 				removeBtn.onclick = () => {
@@ -2566,10 +2571,10 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 				};
 			}
 
-			const addRow = tocContainer.createDiv('folderbridge-ignore-add');
+			const addRow = tocContainer.createDiv('multifolder-ignore-add');
 			const inputEl = addRow.createEl('input', {
 				type: 'text',
-				placeholder: 'Absolute path to a read-only TOC JSON file, e.g. /home/me/folderbridge.mounts.json',
+				placeholder: 'Absolute path to a read-only TOC JSON file, e.g. /home/me/multifolder.mounts.json',
 			});
 			const addBtn = addRow.createEl('button', { text: 'Add' });
 			addBtn.onclick = () => {
@@ -2638,7 +2643,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 					const url = URL.createObjectURL(blob);
 					const a = document.createElement('a');
 					a.href = url;
-					a.download = 'folderbridge-mounts.json';
+					a.download = 'multifolder-mounts.json';
 					a.click();
 					URL.revokeObjectURL(url);
 				}))
@@ -2688,10 +2693,10 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 									await this.plugin.addMount(fresh);
 									added++;
 								}
-								new Notice(`Folder Bridge: Imported ${added} mount(s).${skipped ? ` ${skipped} skipped (invalid).` : ''}`);
+								new Notice(`Multifolder: Imported ${added} mount(s).${skipped ? ` ${skipped} skipped (invalid).` : ''}`);
 								this.display();
 							} catch {
-								new Notice(`${this.plugin.manifest.name}: failed to parse the selected file. Is it a valid Folder Bridge export?`);
+								new Notice(`${this.plugin.manifest.name}: failed to parse the selected file. Is it a valid Multifolder export?`);
 							}
 						})();
 					};
@@ -2707,7 +2712,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 		}
 
 		// Wrap mount rows in a container so drag-drop only affects this list
-		const mountListEl = containerEl.createDiv('folderbridge-mount-list');
+		const mountListEl = containerEl.createDiv('multifolder-mount-list');
 		for (const mount of this.plugin.settings.mountPoints) {
 			this.renderMountRow(mountListEl, mount);
 		}
@@ -2784,7 +2789,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 
 				// Disable the toggle entirely if it's not this device and foreign mounts aren't allowed
 				if (!canEnable || !isUserEditable) {
-					toggle.toggleEl.classList.add('is-disabled', 'folderbridge-toggle-disabled');
+					toggle.toggleEl.classList.add('is-disabled', 'multifolder-toggle-disabled');
 				}
 			})
 			.addExtraButton(btn => {
@@ -2807,7 +2812,7 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 						})();
 					});
 				if (mount.readOnly) {
-					btn.extraSettingsEl.classList.add('folderbridge-warning-icon');
+					btn.extraSettingsEl.classList.add('multifolder-warning-icon');
 				}
 			});
 
@@ -2884,45 +2889,45 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 		if (allowReorder) {
 			el.setAttribute('draggable', 'true');
 			el.dataset.mountId = mount.id;
-			el.addClass('folderbridge-draggable-row');
+			el.addClass('multifolder-draggable-row');
 		}
 
 		el.addEventListener('dragstart', (e) => {
 			if (!allowReorder) return;
 			this.dragSrcId = mount.id;
-			el.addClass('folderbridge-drag-source');
+			el.addClass('multifolder-drag-source');
 			e.dataTransfer?.setData('text/plain', mount.id);
 		});
 
 		el.addEventListener('dragend', () => {
 			if (!allowReorder) return;
 			this.dragSrcId = null;
-			el.removeClass('folderbridge-drag-source');
-			containerEl.querySelectorAll('.folderbridge-drag-over')
-				.forEach(n => (n as HTMLElement).removeClass('folderbridge-drag-over'));
+			el.removeClass('multifolder-drag-source');
+			containerEl.querySelectorAll('.multifolder-drag-over')
+				.forEach(n => (n as HTMLElement).removeClass('multifolder-drag-over'));
 		});
 
 		el.addEventListener('dragover', (e) => {
 			if (!allowReorder) return;
 			if (this.dragSrcId && this.dragSrcId !== mount.id) {
 				e.preventDefault();
-				containerEl.querySelectorAll('.folderbridge-drag-over')
-					.forEach(n => (n as HTMLElement).removeClass('folderbridge-drag-over'));
-				el.addClass('folderbridge-drag-over');
+				containerEl.querySelectorAll('.multifolder-drag-over')
+					.forEach(n => (n as HTMLElement).removeClass('multifolder-drag-over'));
+				el.addClass('multifolder-drag-over');
 			}
 		});
 
 		el.addEventListener('dragleave', (e) => {
 			if (!allowReorder) return;
 			if (!el.contains(e.relatedTarget as Node)) {
-				el.removeClass('folderbridge-drag-over');
+				el.removeClass('multifolder-drag-over');
 			}
 		});
 
 		el.addEventListener('drop', (e) => {
 			if (!allowReorder) return;
 			e.preventDefault();
-			el.removeClass('folderbridge-drag-over');
+			el.removeClass('multifolder-drag-over');
 			if (!this.dragSrcId || this.dragSrcId === mount.id) return;
 
 			const mounts = this.plugin.settings.mountPoints;
@@ -2961,12 +2966,12 @@ class FolderBridgeSettingTab extends PluginSettingTab {
 				const prefix = (isUnreachable || !status.reachable) ? '✗' : '✓';
 				setting.setName(`${prefix} ${displayName} ${badge}`);
 				if (isUnreachable || !status.reachable) {
-					setting.settingEl.classList.add('folderbridge-unreachable-row');
+					setting.settingEl.classList.add('multifolder-unreachable-row');
 				}
 			}).catch(() => { /* ignore render errors */ });
 		} else {
 			setting.setName(`[Other device] ${displayName}`);
-			setting.settingEl.classList.add('folderbridge-foreign-mount');
+			setting.settingEl.classList.add('multifolder-foreign-mount');
 		}
 	}
 }

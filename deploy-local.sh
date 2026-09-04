@@ -5,7 +5,7 @@ set -euo pipefail
 # Usage: ./deploy-local.sh [--build]
 #
 # Requires a .env file (git-ignored) with:
-#   PLUGIN_DIR=/path/to/your/vault/.obsidian/plugins/folderbridge
+#   PLUGIN_DIR=/path/to/your/vault/.obsidian/plugins/multifolder
 #
 # Pass --build to run `npm run build` first. Without it the existing main.js
 # is deployed, and the script refuses to run when there is none.
@@ -22,7 +22,7 @@ fi
 
 if [ -z "${PLUGIN_DIR:-}" ]; then
   echo "Error: PLUGIN_DIR not set. Copy .env.example to .env and set it:" >&2
-  echo "  PLUGIN_DIR=/path/to/your/vault/.obsidian/plugins/folderbridge" >&2
+  echo "  PLUGIN_DIR=/path/to/your/vault/.obsidian/plugins/multifolder" >&2
   exit 1
 fi
 
@@ -46,7 +46,7 @@ if [ "$MANIFEST_ID" != "$TARGET_NAME" ]; then
   exit 1
 fi
 
-echo "Deploying Folder Bridge $(node -p "require('./manifest.json').version") to: $PLUGIN_DIR"
+echo "Deploying Multifolder $(node -p "require('./manifest.json').version") to: $PLUGIN_DIR"
 
 mkdir -p "$PLUGIN_DIR"
 cp manifest.json "$PLUGIN_DIR/"
@@ -64,5 +64,5 @@ done
 echo "Deployment complete, 3 files verified."
 echo ""
 echo "Next steps:"
-echo "1. Settings -> Community plugins -> reload, then enable Folder Bridge"
+echo "1. Settings -> Community plugins -> reload, then enable Multifolder"
 echo "2. Or reload Obsidian (Cmd/Ctrl + R) if it is already enabled"

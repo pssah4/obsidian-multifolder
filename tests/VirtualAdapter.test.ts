@@ -25,7 +25,7 @@ describe('VirtualAdapter delete notifications', () => {
     });
 
     it('notifies mounted file removals after delete succeeds', async () => {
-        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'folderbridge-va-'));
+        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'multifolder-va-'));
         tempDirs.push(tempDir);
 
         const mount = makeMount(tempDir);
@@ -58,7 +58,7 @@ describe('VirtualAdapter delete notifications', () => {
 
 describe('VirtualAdapter cachedRead', () => {
     it('reads mounted files through the mounted path instead of the original adapter cache', async () => {
-        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'folderbridge-va-'));
+        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'multifolder-va-'));
         const mount = makeMount(tempDir);
         const mapper = new PathMapper();
         mapper.update([mount], 'test-device');
@@ -118,7 +118,7 @@ describe('VirtualAdapter copy source containment', () => {
     });
 
     it('refuses to copy from a symlink that leaves the mount', async () => {
-        const root = await fs.mkdtemp(path.join(os.tmpdir(), 'folderbridge-copy-'));
+        const root = await fs.mkdtemp(path.join(os.tmpdir(), 'multifolder-copy-'));
         tempDirs.push(root);
         const mountDir = path.join(root, 'mount');
         const outsideDir = path.join(root, 'outside');
@@ -149,7 +149,7 @@ describe('VirtualAdapter copy source containment', () => {
     });
 
     it('still copies an ordinary file inside the mount', async () => {
-        const root = await fs.mkdtemp(path.join(os.tmpdir(), 'folderbridge-copy-ok-'));
+        const root = await fs.mkdtemp(path.join(os.tmpdir(), 'multifolder-copy-ok-'));
         tempDirs.push(root);
         const mountDir = path.join(root, 'mount');
         await fs.mkdir(mountDir);

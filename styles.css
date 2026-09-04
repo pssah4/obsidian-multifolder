@@ -1,23 +1,23 @@
-/* FolderBridge Plugin Styles */
+/* Multifolder Plugin Styles */
 
-.folderbridge-ribbon-class {
+.multifolder-ribbon-class {
     color: var(--text-muted);
 }
 
-.folderbridge-ribbon-class:hover {
+.multifolder-ribbon-class:hover {
     color: var(--text-normal);
 }
 
 
 /* Settings tab styles */
 
-.folderbridge-settings-heading {
+.multifolder-settings-heading {
     margin-top: 1em;
     margin-bottom: 0.5em;
     font-weight: 600;
 }
 
-.folderbridge-mount-point {
+.multifolder-mount-point {
     display: flex;
     flex-direction: column;
     gap: 0.5em;
@@ -27,19 +27,19 @@
     border-radius: 4px;
 }
 
-.folderbridge-mount-point-header {
+.multifolder-mount-point-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.folderbridge-mount-point-paths {
+.multifolder-mount-point-paths {
     font-family: var(--font-monospace);
     font-size: 0.9em;
     color: var(--text-muted);
 }
 
-.folderbridge-virtual-path {
+.multifolder-virtual-path {
     color: var(--text-accent);
     font-weight: 500;
 }
@@ -50,7 +50,7 @@
 
 /* Show a grab cursor on the info half of a draggable row */
 
-.folderbridge-draggable-row {
+.multifolder-draggable-row {
     cursor: grab;
     transition: opacity 0.15s ease;
 }
@@ -58,16 +58,16 @@
 
 /* Controls inside the row keep their default cursor */
 
-.folderbridge-draggable-row button,
-.folderbridge-draggable-row input,
-.folderbridge-draggable-row .checkbox-container {
+.multifolder-draggable-row button,
+.multifolder-draggable-row input,
+.multifolder-draggable-row .checkbox-container {
     cursor: pointer;
 }
 
 
 /* The row being dragged goes semi-transparent */
 
-.folderbridge-drag-source {
+.multifolder-drag-source {
     opacity: 0.4;
     cursor: grabbing;
 }
@@ -75,7 +75,7 @@
 
 /* Drop target: highlight top border to show insertion point */
 
-.folderbridge-drag-over {
+.multifolder-drag-over {
     border-top: 2px solid var(--interactive-accent) !important;
     background-color: var(--background-modifier-hover);
 }
@@ -83,7 +83,7 @@
 
 /* ── Settings tab layout ─────────────────────────────────────────────────── */
 
-.folderbridge-info-box {
+.multifolder-info-box {
     padding: 10px;
     background-color: var(--background-modifier-message);
     border: 1px solid var(--background-modifier-border);
@@ -91,44 +91,44 @@
     margin-bottom: 20px;
 }
 
-.folderbridge-info-meta {
+.multifolder-info-meta {
     margin: 0 0 10px 0;
 }
 
-.folderbridge-sync-warning {
+.multifolder-sync-warning {
     color: var(--text-warning);
     margin: 0;
 }
 
-.folderbridge-ignore-item {
+.multifolder-ignore-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 6px;
 }
 
-.folderbridge-ignore-item>span {
+.multifolder-ignore-item>span {
     flex-grow: 1;
 }
 
-.folderbridge-ignore-add {
+.multifolder-ignore-add {
     display: flex;
     margin-top: 12px;
     gap: 8px;
 }
 
-.folderbridge-ignore-add>input {
+.multifolder-ignore-add>input {
     flex-grow: 1;
 }
 
-.folderbridge-global-ignore {
+.multifolder-global-ignore {
     margin-bottom: 20px;
     padding: 10px;
     border: 1px solid var(--background-modifier-border);
     border-radius: 4px;
 }
 
-.folderbridge-ignore-list {
+.multifolder-ignore-list {
     margin-top: 10px;
     margin-bottom: 20px;
     padding: 10px;
@@ -139,7 +139,7 @@
 
 /* ── Mount manager modal ─────────────────────────────────────────────────── */
 
-.folderbridge-advanced {
+.multifolder-advanced {
     margin-top: 12px;
     margin-bottom: 8px;
     border: 1px solid var(--background-modifier-border);
@@ -147,94 +147,94 @@
     padding: 0 10px;
 }
 
-.folderbridge-advanced>summary {
+.multifolder-advanced>summary {
     cursor: pointer;
     padding: 8px 0;
     font-weight: 600;
     color: var(--text-muted);
 }
 
-.folderbridge-advanced>div {
+.multifolder-advanced>div {
     padding-bottom: 8px;
 }
 
-.folderbridge-input-flex {
+.multifolder-input-flex {
     flex: 1;
     width: 100%;
 }
 
-.folderbridge-input-narrow {
+.multifolder-input-narrow {
     width: 80px !important;
 }
 
-.folderbridge-input-medium {
+.multifolder-input-medium {
     width: 100px !important;
 }
 
-.folderbridge-preset-note {
+.multifolder-preset-note {
     margin-top: -4px;
     margin-bottom: 8px;
     color: var(--text-accent);
     font-size: var(--font-ui-smaller);
 }
 
-.folderbridge-hidden {
+.multifolder-hidden {
     display: none !important;
 }
 
-.folderbridge-vault-section {
+.multifolder-vault-section {
     margin-bottom: 8px;
 }
 
 
 /* ── Dynamic state classes ───────────────────────────────────────────────── */
 
-.folderbridge-warning-icon {
+.multifolder-warning-icon {
     color: var(--text-warning);
 }
 
-.folderbridge-unreachable-row {
+.multifolder-unreachable-row {
     border-left: 3px solid var(--text-warning) !important;
 }
 
-.folderbridge-foreign-mount {
+.multifolder-foreign-mount {
     opacity: 0.7;
 }
 
-.folderbridge-toggle-disabled {
+.multifolder-toggle-disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.folderbridge-status-suppressed {
+.multifolder-status-suppressed {
     color: var(--text-muted);
 }
 
-.folderbridge-status-warning {
+.multifolder-status-warning {
     color: var(--text-warning);
 }
 
 
 /* ── Welcome modal ───────────────────────────────────────────────────────── */
 
-.folderbridge-welcome-desc {
+.multifolder-welcome-desc {
     margin-bottom: 16px;
 }
 
-.folderbridge-welcome-intro {
+.multifolder-welcome-intro {
     margin-bottom: 8px;
 }
 
-.folderbridge-feature-list {
+.multifolder-feature-list {
     margin-left: 16px;
     margin-bottom: 12px;
 }
 
-.folderbridge-feature-item {
+.multifolder-feature-item {
     margin-bottom: 4px;
 }
 
-.folderbridge-tip-box {
+.multifolder-tip-box {
     padding: 10px 14px;
     background-color: var(--background-modifier-message);
     border: 1px solid var(--background-modifier-border);
@@ -245,7 +245,7 @@
 
 /* ── Modal button container ──────────────────────────────────────────────── */
 
-.folderbridge-modal-buttons {
+.multifolder-modal-buttons {
     display: flex;
     justify-content: flex-end;
     gap: 10px;

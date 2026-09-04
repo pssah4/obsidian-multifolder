@@ -1,6 +1,6 @@
 # Publishing & Release Checklist
 
-This document defines every step required to release a new version of FolderBridge and pass all automated and manual checks for the Obsidian Community Plugin directory.
+This document defines every step required to release a new version of Multifolder and pass all automated and manual checks for the Obsidian Community Plugin directory.
 
 ---
 
@@ -29,7 +29,7 @@ The Obsidian community-plugin bot validates these automatically when a PR is ope
 | `eval()` | ❌ Banned | ✅ Not used |
 | `fetch()` for network requests | ❌ Use `requestUrl` instead | ✅ WebDAV/S3/SFTP use their own authenticated clients; no bare `fetch` |
 | Hard-coded `.obsidian` path | ❌ Banned | ✅ Uses `app.vault.configDir` |
-| Inline `element.style.*` assignments | ❌ Use CSS classes | ✅ All styles in `styles.css` with `folderbridge-*` prefix |
+| Inline `element.style.*` assignments | ❌ Use CSS classes | ✅ All styles in `styles.css` with `multifolder-*` prefix |
 | Unsafe `as TFile` / `as TFolder` casts | ⚠️ Reviewer flag | ✅ Uses `instanceof` narrowing |
 | `require()` at module scope | ⚠️ Breaks mobile | ✅ Uses `loadOptionalNodeModule()` lazy loader |
 | Floating `Promise`s | ⚠️ Reviewer flag | ✅ Wrapped with `void` operator |
@@ -121,7 +121,7 @@ These are the reviewer criteria drawn from the [official plugin guidelines](http
 ### Required files
 
 - `README.md` — describes the plugin's purpose and usage
-- `LICENSE` — open-source license (FolderBridge uses MIT)
+- `LICENSE` — open-source license (Multifolder uses MIT)
 - `manifest.json` — valid with all required fields
 - `versions.json` — version-to-minAppVersion map
 - `main.js` — production bundle (in GitHub release assets, not committed to repo)
@@ -147,7 +147,7 @@ These are the reviewer criteria drawn from the [official plugin guidelines](http
 ### UI / UX requirements
 
 - Use sentence case for UI labels (✅ enforced since v2.5.0)
-- Prefix all CSS classes with the plugin ID (`folderbridge-*`) (✅ done)
+- Prefix all CSS classes with the plugin ID (`multifolder-*`) (✅ done)
 - No modal or notice spam — one notice per action, non-blocking where possible (✅ done)
 - Settings must be self-explanatory or have description text (✅ every setting has `.setDesc()`)
 
@@ -162,11 +162,11 @@ This only needs to be done once (initial submission). Subsequent releases only r
 
 ```json
 {
-  "id": "folderbridge",
-  "name": "Folder Bridge",
+  "id": "multifolder",
+  "name": "Multifolder",
   "author": "Timmothy Escolopio",
   "description": "Adds external folders to your vault as seamless, native-feeling directories. Supports local filesystem, WebDAV, S3/Backblaze B2, and SFTP mounts.",
-  "repo": "tescolopio/Obsidian_FolderBridge",
+  "repo": "pssah4/obsidian-multifolder",
   "branch": "main"
 }
 ```

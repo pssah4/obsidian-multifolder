@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with FolderBridge development in 5 minutes!
+Get up and running with Multifolder development in 5 minutes!
 
 ## 🚀 Quick Setup
 
@@ -26,16 +26,16 @@ This creates:
 **Option A: Symbolic Link (Recommended)**
 ```bash
 # macOS/Linux
-ln -s "$(pwd)" "/path/to/your/vault/.obsidian/plugins/obsidian-folderbridge"
+ln -s "$(pwd)" "/path/to/your/vault/.obsidian/plugins/obsidian-multifolder"
 
 # Windows (PowerShell as Admin)
-New-Item -ItemType SymbolicLink -Path "C:\path\to\vault\.obsidian\plugins\obsidian-folderbridge" -Target "$(Get-Location)"
+New-Item -ItemType SymbolicLink -Path "C:\path\to\vault\.obsidian\plugins\obsidian-multifolder" -Target "$(Get-Location)"
 ```
 
 **Option B: Manual Copy**
 ```bash
 # Copy files to your vault's plugins directory
-cp main.js manifest.json styles.css "/path/to/vault/.obsidian/plugins/obsidian-folderbridge/"
+cp main.js manifest.json styles.css "/path/to/vault/.obsidian/plugins/obsidian-multifolder/"
 ```
 
 ### 4. Enable in Obsidian (1 minute)
@@ -43,7 +43,7 @@ cp main.js manifest.json styles.css "/path/to/vault/.obsidian/plugins/obsidian-f
 1. Open Obsidian
 2. Go to: **Settings → Community Plugins**
 3. Turn off "Restricted mode" (if enabled)
-4. Click "Browse" → Find "FolderBridge" in your local plugins
+4. Click "Browse" → Find "Multifolder" in your local plugins
 5. Click **"Enable"**
 
 ### 5. Start Developing! (Optional)
@@ -60,13 +60,13 @@ Then install the **Hot Reload** community plugin in Obsidian for automatic updat
 
 Look for:
 - 📁 Folder icon in the left ribbon
-- "FolderBridge: Ready" in the status bar
-- "FolderBridge" in Settings → Community Plugins
+- "Multifolder: Ready" in the status bar
+- "Multifolder" in Settings → Community Plugins
 
 ## 🎯 Next Steps
 
 1. **Read the docs**: Check out `DEVELOPMENT.md` for detailed information
-2. **Configure settings**: Open Obsidian Settings → FolderBridge
+2. **Configure settings**: Open Obsidian Settings → Multifolder
 3. **Start coding**: Edit `main.ts` to implement features
 4. **Test changes**: Use `npm run build` and reload Obsidian
 

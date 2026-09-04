@@ -19,12 +19,12 @@ describe('parseTocConfig', () => {
                     readOnly: true,
                 },
             ],
-        }), '/configs/folderbridge.mounts.json', 'device-123');
+        }), '/configs/multifolder.mounts.json', 'device-123');
 
         expect(parsed.warnings).toEqual([]);
         expect(parsed.mounts).toHaveLength(2);
         expect(parsed.mounts[0].ignoreList).toEqual(['node_modules', '.git']);
-        expect(parsed.mounts[0].tocSourcePath).toBe('/configs/folderbridge.mounts.json');
+        expect(parsed.mounts[0].tocSourcePath).toBe('/configs/multifolder.mounts.json');
         expect(parsed.mounts[1].mountType).toBe('vault');
         expect(parsed.mounts[1].readOnly).toBe(true);
     });

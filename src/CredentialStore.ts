@@ -27,7 +27,7 @@ import { getRuntimeRequire } from './runtimeNode';
  */
 
 const PREFIX = 'enc:';
-const SESSION_NS = 'folderbridge';
+const SESSION_NS = 'multifolder';
 
 // ---------------------------------------------------------------------------
 // Electron safeStorage accessor

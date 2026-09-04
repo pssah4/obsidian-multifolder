@@ -5,7 +5,7 @@
 ### Sentence Case Violations
 - **Status:** ✅ Fixed (24 → 0 violations)
 - **Method:** Added missing brands and acronyms to eslint.config.mjs
-- **Brands Added:** FolderBridge, Obsidian, GitHub, Amazon
+- **Brands Added:** Multifolder, Obsidian, GitHub, Amazon
 - **Acronyms Added:** OK, UI, JSON, SFTP, SSH, S3, PDF, URL, ID, IP
 
 ### Global Variable Errors

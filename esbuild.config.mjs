@@ -39,7 +39,7 @@ const nativeNodeModulesPlugin = {
 module.exports = new Proxy({}, {
   get(_, key) {
     return function() {
-      throw new Error('[Folder Bridge] Native module not available in bundled context: ' + key);
+      throw new Error('[Multifolder] Native module not available in bundled context: ' + key);
     };
   }
 });
@@ -58,12 +58,12 @@ const optionalNodeModulesPlugin = {
 			}
 
 			return {
-				path: 'folderbridge-optional-node-modules',
-				namespace: 'folderbridge-optional-node-modules',
+				path: 'multifolder-optional-node-modules',
+				namespace: 'multifolder-optional-node-modules',
 			};
 		});
 
-		build.onLoad({ filter: /.*/, namespace: 'folderbridge-optional-node-modules' }, () => ({
+		build.onLoad({ filter: /.*/, namespace: 'multifolder-optional-node-modules' }, () => ({
 			contents: `
 export function loadBundledOptionalModule(moduleId) {
 	try {

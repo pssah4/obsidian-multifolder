@@ -1,4 +1,4 @@
-# Roadmap for Folder Bridge
+# Roadmap for Multifolder
 
 This document tracks the current status of platform support and planned features. It is updated with each release.
 
@@ -12,7 +12,7 @@ This document tracks the current status of platform support and planned features
 |----------|--------|-------|
 | Windows | ✅ Stable | Full support — long paths, UNC, NTFS quirks, OneDrive Files On Demand |
 | Linux | ✅ Stable | POSIX paths, WSL cross-environment support |
-| macOS | ⚠️ Untested | POSIX code paths are fully implemented; no known blockers. Community testing welcomed — [open an issue](https://github.com/tescolopio/Obsidian_FolderBridge/issues) if you hit anything. |
+| macOS | ⚠️ Untested | POSIX code paths are fully implemented; no known blockers. Community testing welcomed — [open an issue](https://github.com/pssah4/obsidian-multifolder/issues) if you hit anything. |
 | Android | ✅ Stable | WebDAV and S3/B2 mounts work fully on Obsidian Android. The UI automatically shows only mobile-compatible mount types. Local and SFTP mounts require the desktop Electron runtime and are hidden on mobile. |
 | iOS | ❌ Not feasible | Obsidian's iOS sandbox prevents access to arbitrary filesystem paths and blocks the Node.js networking stack. Not blocked on engineering — blocked by the OS. |
 
@@ -63,7 +63,7 @@ This document tracks the current status of platform support and planned features
 ### Medium Priority
 
 - **Mounted-folder sort modes / file organisation** — add explicit ordering controls for bridged folders without trying to replace Obsidian's file explorer UI.
-	- **Phase 1: low-risk sort modes** — alphabetical ascending/descending, folders-first ordering, and extension/filetype ordering. These can likely be implemented in Folder Bridge's adapter listing path before results are returned to Obsidian.
+	- **Phase 1: low-risk sort modes** — alphabetical ascending/descending, folders-first ordering, and extension/filetype ordering. These can likely be implemented in Multifolder's adapter listing path before results are returned to Obsidian.
 	- **Phase 2: metadata sorts** — modified time and possibly size-based ordering. Feasible for local mounts, but more expensive for WebDAV/S3/SFTP because sorting may require extra metadata/stat calls for every entry.
 	- **Phase 3: grouped explorer views (exploratory)** — Windows Explorer-style grouping such as “by file type” or “by date” would require deeper file-explorer UI integration rather than simple adapter ordering. Higher maintenance risk; only worth pursuing if simpler sort modes are not sufficient.
 - **OAuth2-based Google Drive mounting** — requires a local HTTP redirect server for the auth callback; scoped to a future release once the core mount types stabilise
@@ -81,4 +81,4 @@ This document tracks the current status of platform support and planned features
 
 ---
 
-The roadmap evolves with community feedback and real-world usage patterns. To request a feature or report a platform-specific issue, open an issue on [GitHub](https://github.com/tescolopio/Obsidian_FolderBridge/issues).
+The roadmap evolves with community feedback and real-world usage patterns. To request a feature or report a platform-specific issue, open an issue on [GitHub](https://github.com/pssah4/obsidian-multifolder/issues).
