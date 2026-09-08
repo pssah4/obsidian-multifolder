@@ -143,7 +143,7 @@ export class VirtualAdapter {
 		const adapter = this.sftpAdapters.get(mountId);
 		if (adapter) {
 			void adapter.disconnect().catch(error => {
-				logger.error(`[FolderBridge] Failed to disconnect SFTP adapter for mount ${mountId}:`, error);
+				logger.error(`[Multifolder] Failed to disconnect SFTP adapter for mount ${mountId}:`, error);
 			});
 			this.sftpAdapters.delete(mountId);
 		}
@@ -173,7 +173,7 @@ export class VirtualAdapter {
 		if (!this.readOnlyNoticedMounts.has(mount.id)) {
 			this.readOnlyNoticedMounts.add(mount.id);
 			new Notice(
-				`Folder Bridge: "${mount.virtualPath}" is read-only — this change was not saved.`,
+				`Multifolder: "${mount.virtualPath}" is read-only — this change was not saved.`,
 				6000
 			);
 		}
@@ -238,7 +238,7 @@ export class VirtualAdapter {
 		if (skipAllowlist) return;
 		if (!this.security.isAllowed(realPath)) {
 			throw new Error(
-				`Folder Bridge: "${realPath}" is not on the allowlist. ` +
+				`Multifolder: "${realPath}" is not on the allowlist. ` +
 				`Add the mount in plugin settings to permit access.`
 			);
 		}
@@ -259,7 +259,7 @@ export class VirtualAdapter {
 		const base = path.basename(realPath);
 		if (isReservedWindowsFilename(base)) {
 			throw new Error(
-				`Folder Bridge: "${base}" is a reserved device name on Windows and ` +
+				`Multifolder: "${base}" is a reserved device name on Windows and ` +
 				`cannot be used as a file or folder name (e.g. CON, NUL, COM1-9, LPT1-9).`
 			);
 		}
@@ -285,7 +285,7 @@ export class VirtualAdapter {
 
 	private assertVisibleMountFile(normalizedPath: string, mount: MountPoint): void {
 		if (!this.isVisibleMountFile(normalizedPath, mount)) {
-			throw new Error(`Folder Bridge: Path "${normalizedPath}" is hidden by this mount's visible file filter.`);
+			throw new Error(`Multifolder: Path "${normalizedPath}" is hidden by this mount's visible file filter.`);
 		}
 	}
 
@@ -384,7 +384,7 @@ export class VirtualAdapter {
 			} catch (e) {
 				// Obsidian expects null for missing files, not an error
 				if ((e as NodeJS.ErrnoException).code !== 'ENOENT') {
-					logger.debug(`[FolderBridge] stat failed for "${realPath}":`, e);
+					logger.debug(`[Multifolder] stat failed for "${realPath}":`, e);
 				}
 				return null;
 			}
@@ -410,9 +410,9 @@ export class VirtualAdapter {
 	async list(normalizedPath: string): Promise<{ files: string[]; folders: string[] }> {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
-			logger.debug(`[FolderBridge] list: found mount for "${normalizedPath}"`);
+			logger.debug(`[Multifolder] list: found mount for "${normalizedPath}"`);
 			if (this.isPathIgnored(normalizedPath, mount)) {
-				logger.debug(`[FolderBridge] list: path is ignored, returning empty`);
+				logger.debug(`[Multifolder] list: path is ignored, returning empty`);
 				return { files: [], folders: [] };
 			}
 			const webdav = this.getWebDAV(mount);
@@ -443,11 +443,11 @@ export class VirtualAdapter {
 				};
 			}
 			const realPath = this.toReal(normalizedPath, mount);
-			logger.debug(`[FolderBridge] list: resolved to real path "${realPath}"`);
+			logger.debug(`[Multifolder] list: resolved to real path "${realPath}"`);
 			try {
 				return await this.listRealDirectory(realPath, normalizedPath, mount);
 			} catch (e) {
-				logger.error(`[FolderBridge] list failed for mount "${mount.virtualPath}":`, e);
+				logger.error(`[Multifolder] list failed for mount "${mount.virtualPath}":`, e);
 				// Return empty instead of throwing to avoid breaking the UI
 				return { files: [], folders: [] };
 			}
@@ -492,15 +492,15 @@ export class VirtualAdapter {
 			entries = await fs.promises.readdir(realDirPath, { withFileTypes: true });
 		} catch (e) {
 			const msg = translateFsError(e as NodeJS.ErrnoException, 'list');
-			logger.error(`[FolderBridge] Failed to list directory "${realDirPath}":`, msg);
-			throw new Error(`Folder Bridge: Cannot list "${realDirPath}": ${msg}`);
+			logger.error(`[Multifolder] Failed to list directory "${realDirPath}":`, msg);
+			throw new Error(`Multifolder: Cannot list "${realDirPath}": ${msg}`);
 		}
 
-		logger.debug(`[FolderBridge] listRealDirectory: found ${entries.length} entries in "${realDirPath}"`);
+		logger.debug(`[Multifolder] listRealDirectory: found ${entries.length} entries in "${realDirPath}"`);
 
 		// Warn if directory is extremely large
 		if (entries.length > MAX_ENTRIES) {
-			logger.warn(`[FolderBridge] WARNING: Directory "${realDirPath}" contains ${entries.length} items. Plate Folder Bridge limits display to ${MAX_ENTRIES} items for performance.`);
+			logger.warn(`[Multifolder] WARNING: Directory "${realDirPath}" contains ${entries.length} items. Plate Multifolder limits display to ${MAX_ENTRIES} items for performance.`);
 		}
 
 		for (let i = 0; i < entries.length && i < MAX_ENTRIES; i++) {
@@ -523,7 +523,7 @@ export class VirtualAdapter {
 			} else if (entry.isSymbolicLink()) {
 				// For very large directories, skip symlink resolution to avoid delay
 				if (entries.length > 1000) {
-					logger.debug(`[FolderBridge] Skipping symlink resolution in large directory (${entries.length} items)`);
+					logger.debug(`[Multifolder] Skipping symlink resolution in large directory (${entries.length} items)`);
 					// Assume it's a file (safer default)
 					if (this.isVisibleMountFile(virtualChild, mount)) files.push(virtualChild);
 				} else {
@@ -542,7 +542,7 @@ export class VirtualAdapter {
 			}
 		}
 
-		logger.debug(`[FolderBridge] listRealDirectory: returning ${folders.length} folders and ${files.length} files`);
+		logger.debug(`[Multifolder] listRealDirectory: returning ${folders.length} folders and ${files.length} files`);
 		return { files, folders };
 	}
 
@@ -553,7 +553,7 @@ export class VirtualAdapter {
 	async read(normalizedPath: string): Promise<string> {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot read ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot read ignored path "${normalizedPath}"`);
 			this.assertVisibleMountFile(normalizedPath, mount);
 			const webdav = this.getWebDAV(mount);
 			if (webdav) return await webdav.readText(this.toServerPath(normalizedPath, mount));
@@ -566,13 +566,13 @@ export class VirtualAdapter {
 			try {
 				return await fs.promises.readFile(realPath, 'utf8');
 			} catch (e) {
-				logger.error(`[FolderBridge] read failed for "${realPath}":`, e);
+				logger.error(`[Multifolder] read failed for "${realPath}":`, e);
 				if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
 					// Check whether the file is an online-only cloud placeholder
 					// (e.g. OneDrive Files On Demand) before surfacing a raw ENOENT.
 					if (await isCloudPlaceholder(realPath)) {
 						throw new Error(
-							`Folder Bridge: "${path.basename(realPath)}" is a cloud-only placeholder ` +
+							`Multifolder: "${path.basename(realPath)}" is a cloud-only placeholder ` +
 							`(OneDrive / SharePoint Files On Demand) and cannot be read while offline. ` +
 							`Right-click the file and choose "Always keep on this device" to make it available locally.`
 						);
@@ -582,7 +582,7 @@ export class VirtualAdapter {
 					(err as NodeJS.ErrnoException).code = 'ENOENT';
 					throw err;
 				}
-				throw new Error(`Folder Bridge: ${translateFsError(e as NodeJS.ErrnoException, 'read')}`);
+				throw new Error(`Multifolder: ${translateFsError(e as NodeJS.ErrnoException, 'read')}`);
 			}
 		}
 		return this.orig().read(normalizedPath);
@@ -603,7 +603,7 @@ export class VirtualAdapter {
 	async readBinary(normalizedPath: string): Promise<ArrayBuffer> {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot read ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot read ignored path "${normalizedPath}"`);
 			this.assertVisibleMountFile(normalizedPath, mount);
 			const webdav = this.getWebDAV(mount);
 			if (webdav) return await webdav.readBinary(this.toServerPath(normalizedPath, mount));
@@ -621,7 +621,7 @@ export class VirtualAdapter {
 				if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
 					if (await isCloudPlaceholder(realPath)) {
 						throw new Error(
-							`Folder Bridge: "${path.basename(realPath)}" is a cloud-only placeholder ` +
+							`Multifolder: "${path.basename(realPath)}" is a cloud-only placeholder ` +
 							`(OneDrive / SharePoint Files On Demand) and cannot be read while offline. ` +
 							`Right-click the file and choose "Always keep on this device" to make it available locally.`
 						);
@@ -630,7 +630,7 @@ export class VirtualAdapter {
 					(err as NodeJS.ErrnoException).code = 'ENOENT';
 					throw err;
 				}
-				throw new Error(`Folder Bridge: ${translateFsError(e as NodeJS.ErrnoException, 'readBinary')}`);
+				throw new Error(`Multifolder: ${translateFsError(e as NodeJS.ErrnoException, 'readBinary')}`);
 			}
 		}
 		return this.orig().readBinary(normalizedPath);
@@ -644,25 +644,25 @@ export class VirtualAdapter {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
 			if (mount.readOnly) { this.warnReadOnly(mount); return; }
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot write to ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot write to ignored path "${normalizedPath}"`);
 			this.assertVisibleMountFile(normalizedPath, mount);
 			const webdav = this.getWebDAV(mount);
 			if (webdav) {
-				if (this.dryRun) { logger.debug(`[Folder Bridge DryRun] webdav write → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] webdav write → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await webdav.writeText(this.toServerPath(normalizedPath, mount), data);
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
 			}
 			const s3 = this.getS3(mount);
 			if (s3) {
-				if (this.dryRun) { logger.debug(`[Folder Bridge DryRun] s3 write → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] s3 write → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await s3.writeText(this.toServerPath(normalizedPath, mount), data);
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
 			}
 			const sftp = this.getSFTP(mount);
 			if (sftp) {
-				if (this.dryRun) { logger.debug(`[Folder Bridge DryRun] sftp write → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] sftp write → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await sftp.writeText(this.toServerPath(normalizedPath, mount), data);
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
@@ -671,15 +671,15 @@ export class VirtualAdapter {
 
 			this.assertAllowed(realPath);
 			this.assertNotReserved(realPath);
-			if (this.dryRun) { logger.debug(`[FolderBridge DryRun] write → ${realPath}`); return; }
+			if (this.dryRun) { logger.debug(`[Multifolder DryRun] write → ${realPath}`); return; }
 			try {
 				await fs.promises.mkdir(path.dirname(realPath), { recursive: true });
 				await fs.promises.writeFile(realPath, data, 'utf8');
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
 			} catch (e) {
-				const errorMsg = `Folder Bridge: ${translateFsError(e as NodeJS.ErrnoException, 'write')}`;
-				logger.error(`[FolderBridge] write failed for "${realPath}":`, e, errorMsg);
+				const errorMsg = `Multifolder: ${translateFsError(e as NodeJS.ErrnoException, 'write')}`;
+				logger.error(`[Multifolder] write failed for "${realPath}":`, e, errorMsg);
 				throw new Error(errorMsg);
 			}
 		}
@@ -690,25 +690,25 @@ export class VirtualAdapter {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
 			if (mount.readOnly) { this.warnReadOnly(mount); return; }
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot write to ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot write to ignored path "${normalizedPath}"`);
 			this.assertVisibleMountFile(normalizedPath, mount);
 			const webdav = this.getWebDAV(mount);
 			if (webdav) {
-				if (this.dryRun) { logger.debug(`[Folder Bridge DryRun] webdav writeBinary → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] webdav writeBinary → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await webdav.writeBinary(this.toServerPath(normalizedPath, mount), data);
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
 			}
 			const s3 = this.getS3(mount);
 			if (s3) {
-				if (this.dryRun) { logger.debug(`[Folder Bridge DryRun] s3 writeBinary → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] s3 writeBinary → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await s3.writeBinary(this.toServerPath(normalizedPath, mount), data);
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
 			}
 			const sftp = this.getSFTP(mount);
 			if (sftp) {
-				if (this.dryRun) { logger.debug(`[Folder Bridge DryRun] sftp writeBinary → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] sftp writeBinary → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await sftp.writeBinary(this.toServerPath(normalizedPath, mount), data);
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
@@ -716,13 +716,13 @@ export class VirtualAdapter {
 			const realPath = this.toReal(normalizedPath, mount);
 			this.assertAllowed(realPath);
 			this.assertNotReserved(realPath);
-			if (this.dryRun) { logger.debug(`[FolderBridge DryRun] writeBinary → ${realPath}`); return; }
+			if (this.dryRun) { logger.debug(`[Multifolder DryRun] writeBinary → ${realPath}`); return; }
 			try {
 				await fs.promises.mkdir(path.dirname(realPath), { recursive: true });
 				await fs.promises.writeFile(realPath, Buffer.from(data));
 				void this.onModify?.(normalizedPath).catch(() => { });
 			} catch (e) {
-				throw new Error(`Folder Bridge: ${translateFsError(e as NodeJS.ErrnoException, 'writeBinary')}`);
+				throw new Error(`Multifolder: ${translateFsError(e as NodeJS.ErrnoException, 'writeBinary')}`);
 			}
 		}
 		return this.orig().writeBinary(normalizedPath, data, options as DataWriteOptions | undefined);
@@ -732,37 +732,37 @@ export class VirtualAdapter {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
 			if (mount.readOnly) { this.warnReadOnly(mount); return; }
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot append to ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot append to ignored path "${normalizedPath}"`);
 			this.assertVisibleMountFile(normalizedPath, mount);
 			const webdav = this.getWebDAV(mount);
 			if (webdav) {
-				if (this.dryRun) { logger.debug(`[Folder Bridge DryRun] webdav append → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] webdav append → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await webdav.append(this.toServerPath(normalizedPath, mount), data);
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
 			}
 			const s3 = this.getS3(mount);
 			if (s3) {
-				if (this.dryRun) { logger.debug(`[Folder Bridge DryRun] s3 append → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] s3 append → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await s3.append(this.toServerPath(normalizedPath, mount), data);
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
 			}
 			const sftp = this.getSFTP(mount);
 			if (sftp) {
-				if (this.dryRun) { logger.debug(`[Folder Bridge DryRun] sftp append → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] sftp append → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await sftp.append(this.toServerPath(normalizedPath, mount), data);
 				void this.onModify?.(normalizedPath).catch(() => { });
 				return;
 			}
 			const realPath = this.toReal(normalizedPath, mount);
 			this.assertAllowed(realPath);
-			if (this.dryRun) { logger.debug(`[FolderBridge DryRun] append → ${realPath}`); return; }
+			if (this.dryRun) { logger.debug(`[Multifolder DryRun] append → ${realPath}`); return; }
 			try {
 				await fs.promises.appendFile(realPath, data, 'utf8');
 				void this.onModify?.(normalizedPath).catch(() => { });
 			} catch (e) {
-				throw new Error(`Folder Bridge: ${translateFsError(e as NodeJS.ErrnoException, 'append')}`);
+				throw new Error(`Multifolder: ${translateFsError(e as NodeJS.ErrnoException, 'append')}`);
 			}
 		}
 		return this.orig().append(normalizedPath, data, options as DataWriteOptions | undefined);
@@ -775,7 +775,7 @@ export class VirtualAdapter {
 	): Promise<string> {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot process ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot process ignored path "${normalizedPath}"`);
 			this.assertVisibleMountFile(normalizedPath, mount);
 			const content = await this.read(normalizedPath);
 			const updated = fn(content);
@@ -855,25 +855,25 @@ export class VirtualAdapter {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
 			if (mount.readOnly) { this.warnReadOnly(mount); return; }
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot create ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot create ignored path "${normalizedPath}"`);
 
 			const realPath = this.toReal(normalizedPath, mount);
 
 			const webdav = this.getWebDAV(mount);
 			if (webdav) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] mkdir (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] mkdir (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await webdav.mkdir(this.toServerPath(normalizedPath, mount));
 				return;
 			}
 			const s3mkdir = this.getS3(mount);
 			if (s3mkdir) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] mkdir (s3) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] mkdir (s3) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await s3mkdir.mkdir(this.toServerPath(normalizedPath, mount));
 				return;
 			}
 			const sftpMkdir = this.getSFTP(mount);
 			if (sftpMkdir) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] mkdir (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] mkdir (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await sftpMkdir.mkdir(this.toServerPath(normalizedPath, mount));
 				return;
 			}
@@ -882,15 +882,15 @@ export class VirtualAdapter {
 			this.assertNotReserved(realPath);
 
 			if (this.dryRun) {
-				logger.debug(`[FolderBridge DryRun] mkdir → ${realPath}`);
+				logger.debug(`[Multifolder DryRun] mkdir → ${realPath}`);
 				return;
 			}
 
 			try {
 				await fs.promises.mkdir(realPath, { recursive: true });
 			} catch (e) {
-				const errorMsg = `Folder Bridge: ${translateFsError(e as NodeJS.ErrnoException, 'mkdir')}`;
-				logger.error(`[FolderBridge] mkdir failed for "${realPath}":`, e, errorMsg);
+				const errorMsg = `Multifolder: ${translateFsError(e as NodeJS.ErrnoException, 'mkdir')}`;
+				logger.error(`[Multifolder] mkdir failed for "${realPath}":`, e, errorMsg);
 				throw new Error(errorMsg);
 			}
 			return;
@@ -906,7 +906,7 @@ export class VirtualAdapter {
 	private async handleRootMountDeletion(rootMount: MountPoint): Promise<boolean> {
 		const action = await this.onMountRootDelete(rootMount);
 		if (action === 'cancel') {
-			throw new Error(`Folder Bridge: Deletion cancelled.`);
+			throw new Error(`Multifolder: Deletion cancelled.`);
 		}
 		if (action === 'unmount') {
 			// The callback handles the unmounting. We just return true to stop the real deletion.
@@ -926,31 +926,31 @@ export class VirtualAdapter {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
 			if (mount.readOnly) { this.warnReadOnly(mount); return true; }
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot trash ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot trash ignored path "${normalizedPath}"`);
 			const realPath = this.toReal(normalizedPath, mount);
 			const webdavTS = this.getWebDAV(mount);
 			if (webdavTS) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] trashSystem (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return true; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] trashSystem (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return true; }
 				await webdavTS.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return true;
 			}
 			const s3TS = this.getS3(mount);
 			if (s3TS) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] trashSystem (s3) → ${this.toServerPath(normalizedPath, mount)}`); return true; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] trashSystem (s3) → ${this.toServerPath(normalizedPath, mount)}`); return true; }
 				await s3TS.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return true;
 			}
 			const sftpTS = this.getSFTP(mount);
 			if (sftpTS) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] trashSystem (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return true; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] trashSystem (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return true; }
 				await sftpTS.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return true;
 			}
 			this.assertAllowed(realPath);
-			if (this.dryRun) { logger.debug(`[FolderBridge DryRun] trashSystem → ${realPath}`); return true; }
+			if (this.dryRun) { logger.debug(`[Multifolder DryRun] trashSystem → ${realPath}`); return true; }
 			try {
 				const electron = loadOptionalNodeModule<{ shell?: { trashItem(p: string): Promise<string> } }>('electron');
 				const shell = electron?.shell;
@@ -977,31 +977,31 @@ export class VirtualAdapter {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
 			if (mount.readOnly) { this.warnReadOnly(mount); return; }
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot trash ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot trash ignored path "${normalizedPath}"`);
 			const realPath = this.toReal(normalizedPath, mount);
 			const webdavTL = this.getWebDAV(mount);
 			if (webdavTL) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] trashLocal (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] trashLocal (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await webdavTL.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return;
 			}
 			const s3TL = this.getS3(mount);
 			if (s3TL) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] trashLocal (s3) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] trashLocal (s3) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await s3TL.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return;
 			}
 			const sftpTL = this.getSFTP(mount);
 			if (sftpTL) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] trashLocal (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] trashLocal (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await sftpTL.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return;
 			}
 			this.assertAllowed(realPath);
-			if (this.dryRun) { logger.debug(`[FolderBridge DryRun] trashLocal → ${realPath}`); return; }
+			if (this.dryRun) { logger.debug(`[Multifolder DryRun] trashLocal → ${realPath}`); return; }
 			await fs.promises.rm(realPath, { recursive: true, force: true });
 			await this.notifyDelete(normalizedPath);
 			return;
@@ -1019,31 +1019,31 @@ export class VirtualAdapter {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
 			if (mount.readOnly) { this.warnReadOnly(mount); return; }
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot remove ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot remove ignored path "${normalizedPath}"`);
 			const realPath = this.toReal(normalizedPath, mount);
 			const webdavRD = this.getWebDAV(mount);
 			if (webdavRD) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] rmdir (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] rmdir (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await webdavRD.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return;
 			}
 			const s3RD = this.getS3(mount);
 			if (s3RD) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] rmdir (s3) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] rmdir (s3) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await s3RD.removePrefix(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return;
 			}
 			const sftpRD = this.getSFTP(mount);
 			if (sftpRD) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] rmdir (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] rmdir (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await sftpRD.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return;
 			}
 			this.assertAllowed(realPath);
-			if (this.dryRun) { logger.debug(`[FolderBridge DryRun] rmdir → ${realPath}`); return; }
+			if (this.dryRun) { logger.debug(`[Multifolder DryRun] rmdir → ${realPath}`); return; }
 			await fs.promises.rm(realPath, { recursive: true, force: true });
 			await this.notifyDelete(normalizedPath);
 			return;
@@ -1063,31 +1063,31 @@ export class VirtualAdapter {
 		const mount = this.pathMapper.getMountForPath(normalizedPath);
 		if (mount) {
 			if (mount.readOnly) { this.warnReadOnly(mount); return; }
-			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Folder Bridge: Cannot remove ignored path "${normalizedPath}"`);
+			if (this.isPathIgnored(normalizedPath, mount)) throw new Error(`Multifolder: Cannot remove ignored path "${normalizedPath}"`);
 			const realPath = this.toReal(normalizedPath, mount);
 			const webdavRM = this.getWebDAV(mount);
 			if (webdavRM) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] remove (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] remove (webdav) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await webdavRM.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return;
 			}
 			const s3RM = this.getS3(mount);
 			if (s3RM) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] remove (s3) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] remove (s3) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await s3RM.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return;
 			}
 			const sftpRM = this.getSFTP(mount);
 			if (sftpRM) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] remove (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] remove (sftp) → ${this.toServerPath(normalizedPath, mount)}`); return; }
 				await sftpRM.remove(this.toServerPath(normalizedPath, mount));
 				await this.notifyDelete(normalizedPath);
 				return;
 			}
 			this.assertAllowed(realPath);
-			if (this.dryRun) { logger.debug(`[FolderBridge DryRun] remove → ${realPath}`); return; }
+			if (this.dryRun) { logger.debug(`[Multifolder DryRun] remove → ${realPath}`); return; }
 			await fs.promises.rm(realPath, { recursive: true, force: true });
 			await this.notifyDelete(normalizedPath);
 			return;
@@ -1122,32 +1122,32 @@ export class VirtualAdapter {
 			// Rename within the same mount
 			if (srcMount.readOnly) { this.warnReadOnly(srcMount); return; }
 			if (this.isPathIgnored(normalizedPath, srcMount) || this.isPathIgnored(newNormalizedPath, dstMount)) {
-				throw new Error(`Folder Bridge: Cannot rename ignored paths`);
+				throw new Error(`Multifolder: Cannot rename ignored paths`);
 			}
 			const srcReal = this.toReal(normalizedPath, srcMount);
 			const dstReal = this.toReal(newNormalizedPath, dstMount);
 			const webdavRN = this.getWebDAV(srcMount);
 			if (webdavRN) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] rename (webdav) ${this.toServerPath(normalizedPath, srcMount)} → ${this.toServerPath(newNormalizedPath, dstMount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] rename (webdav) ${this.toServerPath(normalizedPath, srcMount)} → ${this.toServerPath(newNormalizedPath, dstMount)}`); return; }
 				await webdavRN.rename(this.toServerPath(normalizedPath, srcMount), this.toServerPath(newNormalizedPath, dstMount));
 				return;
 			}
 			const s3RN = this.getS3(srcMount);
 			if (s3RN) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] rename (s3) ${this.toServerPath(normalizedPath, srcMount)} → ${this.toServerPath(newNormalizedPath, dstMount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] rename (s3) ${this.toServerPath(normalizedPath, srcMount)} → ${this.toServerPath(newNormalizedPath, dstMount)}`); return; }
 				await s3RN.rename(this.toServerPath(normalizedPath, srcMount), this.toServerPath(newNormalizedPath, dstMount));
 				return;
 			}
 			const sftpRN = this.getSFTP(srcMount);
 			if (sftpRN) {
-				if (this.dryRun) { logger.debug(`[FolderBridge DryRun] rename (sftp) ${this.toServerPath(normalizedPath, srcMount)} → ${this.toServerPath(newNormalizedPath, dstMount)}`); return; }
+				if (this.dryRun) { logger.debug(`[Multifolder DryRun] rename (sftp) ${this.toServerPath(normalizedPath, srcMount)} → ${this.toServerPath(newNormalizedPath, dstMount)}`); return; }
 				await sftpRN.rename(this.toServerPath(normalizedPath, srcMount), this.toServerPath(newNormalizedPath, dstMount));
 				return;
 			}
 			this.assertAllowed(srcReal);
 			this.assertAllowed(dstReal);
 			this.assertNotReserved(dstReal);
-			if (this.dryRun) { logger.debug(`[FolderBridge DryRun] rename ${srcReal} → ${dstReal}`); return; }
+			if (this.dryRun) { logger.debug(`[Multifolder DryRun] rename ${srcReal} → ${dstReal}`); return; }
 			await fs.promises.mkdir(path.dirname(dstReal), { recursive: true });
 
 			// Wait for srcReal to materialise before attempting the rename.
@@ -1181,7 +1181,7 @@ export class VirtualAdapter {
 					return; // destination already exists – rename is effectively done
 				} catch { /* neither end exists; fall through to throw */ }
 				throw new Error(
-					`Folder Bridge: Cannot rename "${path.basename(srcReal)}" – the source file was not found after ` +
+					`Multifolder: Cannot rename "${path.basename(srcReal)}" – the source file was not found after ` +
 					`waiting ${MAX_WAIT_MS}ms. ` +
 					`If this file is in OneDrive "Files On Demand", right-click it in Windows Explorer and ` +
 					`choose "Always keep on this device", then try again.`,
@@ -1200,14 +1200,14 @@ export class VirtualAdapter {
 					await fs.promises.rm(srcReal, { recursive: true });
 					return;
 				}
-				throw new Error(`Folder Bridge: ${translateFsError(err, 'rename')}`);
+				throw new Error(`Multifolder: ${translateFsError(err, 'rename')}`);
 			}
 			return;
 		}
 
 		// Cross-mount or cross-adapter rename is not atomic – surface a clear error
 		throw new Error(
-			`Folder Bridge: Cannot move "${normalizedPath}" to "${newNormalizedPath}" across mount boundaries. ` +
+			`Multifolder: Cannot move "${normalizedPath}" to "${newNormalizedPath}" across mount boundaries. ` +
 			`Please copy the file manually instead.`
 		);
 	}
@@ -1223,13 +1223,13 @@ export class VirtualAdapter {
 		if (dstMount?.readOnly) { this.warnReadOnly(dstMount); return; }
 
 		if ((srcMount && this.isPathIgnored(normalizedPath, srcMount)) || (dstMount && this.isPathIgnored(newNormalizedPath, dstMount))) {
-			throw new Error(`Folder Bridge: Cannot copy ignored paths`);
+			throw new Error(`Multifolder: Cannot copy ignored paths`);
 		}
 
 		if (this.dryRun) {
 			const srcDesc = srcMount ? this.pathMapper.toRealPath(normalizedPath, srcMount) : normalizedPath;
 			const dstDesc = dstMount ? this.pathMapper.toRealPath(newNormalizedPath, dstMount) : newNormalizedPath;
-			logger.debug(`[FolderBridge DryRun] copy ${srcDesc} → ${dstDesc}`);
+			logger.debug(`[Multifolder DryRun] copy ${srcDesc} → ${dstDesc}`);
 			return;
 		}
 
@@ -1266,7 +1266,12 @@ export class VirtualAdapter {
 			} else if (srcSFTP && srcMount) {
 				content = Buffer.from(await srcSFTP.readBinary(this.toServerPath(normalizedPath, srcMount)));
 			} else if (srcMount) {
-				content = await fs.promises.readFile(this.toReal(normalizedPath, srcMount));
+				const srcReal = this.toReal(normalizedPath, srcMount);
+				// The source needs the same allowlist check as the destination
+				// below; read() and readBinary() both make it, and without it a
+				// symlink inside the mount copies a file from outside it.
+				this.assertAllowed(srcReal);
+				content = await fs.promises.readFile(srcReal);
 			} else {
 				content = Buffer.from(await this.orig().readBinary(normalizedPath));
 			}
@@ -1290,10 +1295,10 @@ export class VirtualAdapter {
 				await this.orig().writeBinary(newNormalizedPath, contentAB);
 			}
 		} catch (e) {
-			// Re-throw FolderBridge errors unchanged; translate raw fs errors
+			// Re-throw Multifolder errors unchanged; translate raw fs errors
 			const err = e as Error;
-			if (err.message.startsWith('Folder Bridge:')) throw err;
-			throw new Error(`Folder Bridge: ${translateFsError(e as NodeJS.ErrnoException, 'copy')}`);
+			if (err.message.startsWith('Multifolder:')) throw err;
+			throw new Error(`Multifolder: ${translateFsError(e as NodeJS.ErrnoException, 'copy')}`);
 		}
 	}
 }

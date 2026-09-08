@@ -48,7 +48,7 @@ export default defineConfig([
 			"obsidianmd/ui/sentence-case": [
 				"warn",
 				{
-					brands: ["FolderBridge", "Obsidian", "GitHub", "Amazon"],
+					brands: ["Multifolder", "Obsidian", "GitHub", "Amazon"],
 					acronyms: ["OK", "UI", "JSON", "SFTP", "SSH", "S3", "PDF", "URL", "ID", "IP"],
 					enforceCamelCaseLower: true,
 				},

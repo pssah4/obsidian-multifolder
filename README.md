@@ -1,17 +1,22 @@
-# Folder Bridge
+# Multifolder
+
+> **A fork and further development of [Folder Bridge](https://github.com/tescolopio/Obsidian_FolderBridge) by Tim Escolopio**, maintained
+> separately for a different set of needs. The original does the heavy lifting; this fork adds security hardening
+> and changes aimed at a multi-vault setup. Both are MIT licensed. See [Attribution](#attribution) for what differs.
 
 Extends Obsidian's single-root vault by letting you mount external folders as seamless, native-feeling directories inside your vault. Files stay in their original locations — no copying, no duplicating, no symlinking required.
 
 ---
 
-## Full Feature List (v2.14.0)
+## Release 2.16.1
 
-Current release highlights:
+- Released as **Multifolder**, with its own plugin ID (`multifolder`).
+- Explicit attribution to Folder Bridge and its author in the README, license, and settings.
+- Includes the security hardening from 2.16.0: SFTP host-key verification, symlink-aware path checks, and local media server protection.
 
-- **Managed TOC workflow** for UI-created local and vault mounts
-- **Mounted delete sync fix** so deleted mounted notes disappear from Obsidian immediately
-- **Community-plugin reviewer cleanup** in the TOC parser to remove a non-narrowing type assertion warning without changing runtime behavior
-- **Local UI copy validation** with a reviewer-focused text check and pre-commit hook support
+See the [changelog](CHANGELOG.md) for the release history.
+
+## Full Feature List
 
 ### Core
 
@@ -98,27 +103,27 @@ Quick compatibility summary. For platform-specific caveats and setup notes, see 
 
 ## Installation
 
-### From Obsidian Community Plugins (recommended)
+### Using BRAT (recommended)
 
-1. Open **Settings → Community Plugins** and disable Safe Mode if needed
-2. Click **Browse** and search for **Folder Bridge**
-3. Install and enable the plugin
-
-### Using BRAT (Beta Reviewers Auto-update Tool)
-
-To test the latest pre-release versions ahead of an official release, you can install via [BRAT](https://tfthacker.com/BRAT):
+Install Multifolder through [BRAT](https://github.com/TfTHacker/obsidian42-brat) using this repository's GitHub releases:
 
 1. Install the **Obsidian42 - BRAT** plugin from the Community Plugins directory.
 2. Enable BRAT in your settings.
 3. Open the command palette and run **BRAT: Add a beta plugin for testing**.
-4. Enter the repository URL: `https://github.com/tescolopio/Obsidian_FolderBridge`
+4. Enter the repository URL: `https://github.com/pssah4/obsidian-multifolder`
 5. Click **Add Plugin**. BRAT will automatically download and install the latest release.
 
 ### Manual Installation
 
-1. Download `main.js` and `manifest.json` from the [latest release](https://github.com/tescolopio/Obsidian_FolderBridge/releases/latest)
-2. Copy them to `<your-vault>/.obsidian/plugins/folderbridge/`
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/pssah4/obsidian-multifolder/releases/latest)
+2. Copy them to `<your-vault>/.obsidian/plugins/multifolder/`
 3. Enable the plugin in **Settings → Community Plugins**
+
+### Moving from Folder Bridge
+
+Multifolder has a separate plugin ID, so Folder Bridge settings are not imported automatically.
+Disable Folder Bridge before enabling Multifolder in the same vault. To reuse mount definitions,
+export them from Folder Bridge and import them into Multifolder; re-enter remote credentials as needed.
 
 ### Local Development (git clone)
 
@@ -126,10 +131,10 @@ If you want to run straight from source (no release download needed):
 
 ```bash
 # 1. Clone into your vault's plugin folder
-git clone https://github.com/tescolopio/Obsidian_FolderBridge.git \
-  /path/to/your-vault/.obsidian/plugins/folderbridge
+git clone https://github.com/pssah4/obsidian-multifolder.git \
+  /path/to/your-vault/.obsidian/plugins/multifolder
 
-cd /path/to/your-vault/.obsidian/plugins/folderbridge
+cd /path/to/your-vault/.obsidian/plugins/multifolder
 
 # 2. Install dependencies
 npm install
@@ -138,17 +143,17 @@ npm install
 npm run build
 ```
 
-Then in Obsidian: **Settings → Community Plugins → disable Safe Mode → enable Folder Bridge**.
+Then in Obsidian: **Settings → Community Plugins → disable Safe Mode → enable Multifolder**.
 
 > **Hot-reload during development:** run `npm run dev` instead of `npm run build`.
 > Install the [hot-reload plugin](https://github.com/pjeby/hot-reload) in Obsidian and it will
-> automatically reload Folder Bridge whenever `main.js` is rebuilt.
+> automatically reload Multifolder whenever `main.js` is rebuilt.
 
 ---
 
 ## Quick Start
 
-1. Click the **folder-plus** ribbon icon (or go to **Settings → Folder Bridge → Add Mount Point**)
+1. Click the **folder-plus** ribbon icon (or go to **Settings → Multifolder → Add Mount Point**)
 2. Select the **Mount Type** (Local folder, WebDAV, S3/Backblaze B2, SFTP, or Another Obsidian vault)
 3. Fill in the **Real path** and **Virtual path**, then click **Validate & Add**
 
@@ -164,13 +169,13 @@ If you want the Settings UI to write local and vault mounts into a JSON file ins
 
 ## Mount Ownership and TOC Workflow
 
-Folder Bridge now treats mount storage as a source-of-truth decision rather than just a file format option.
+Multifolder now treats mount storage as a source-of-truth decision rather than just a file format option.
 
 There are three mount ownership modes:
 
 - **Manual / `data.json` mounts** — the default behavior when no managed TOC file is configured.
 - **Managed TOC mounts** — local and vault mounts written by the Settings UI into one writable JSON file.
-- **External TOC mounts** — additional JSON files that Folder Bridge reads at runtime but does not edit from the UI.
+- **External TOC mounts** — additional JSON files that Multifolder reads at runtime but does not edit from the UI.
 
 How it works in practice:
 
@@ -199,12 +204,12 @@ For the JSON schema, examples, and troubleshooting details, see the [TOC Config 
 
 ## Support and Follow
 
-If Folder Bridge is useful in your workflow, you can support the project in lightweight ways:
+If Multifolder is useful in your workflow, you can support the project in lightweight ways:
 
-- Follow other work on [GitHub](https://github.com/tescolopio)
-- Browse or star the [Folder Bridge repository](https://github.com/tescolopio/Obsidian_FolderBridge)
+- Follow other work on [GitHub](https://github.com/pssah4)
+- Browse or star the [Multifolder repository](https://github.com/pssah4/obsidian-multifolder)
 
-The plugin settings also include direct GitHub buttons under **Support Folder Bridge**.
+The plugin settings also include direct GitHub buttons under **Support Multifolder**.
 
 ---
 
@@ -212,7 +217,7 @@ The plugin settings also include direct GitHub buttons under **Support Folder Br
 
 ### Adding a Local Mount
 
-1. Click the **folder-plus** ribbon icon, or go to **Settings → Folder Bridge** and click **Add Mount Point**
+1. Click the **folder-plus** ribbon icon, or go to **Settings → Multifolder** and click **Add Mount Point**
 2. In the **Mount Type** dropdown, select **Local folder**
 3. **Real path** — click **Browse…** to open the OS folder picker, or type the absolute path  
    - Windows: `C:\Users\YourName\Documents\Work`  
@@ -245,7 +250,7 @@ Mount a remote Nextcloud, ownCloud, or generic WebDAV server as a vault folder.
    > 🔒 The password is encrypted with your **OS keychain** (Windows DPAPI / macOS Keychain / Linux libsecret) and stored in `data.json`. It persists across Obsidian restarts — no re-entry needed. The encrypted blob is device-specific; other devices cannot decrypt it even if `data.json` syncs. On mobile, passwords fall back to session memory only.
 7. Click **Validate & Add**
 
-Folder Bridge will test the connection before saving. If the server is unreachable, you'll see an error with the reason.
+Multifolder will test the connection before saving. If the server is unreachable, you'll see an error with the reason.
 
 ---
 
@@ -259,7 +264,7 @@ Browse a folder from a second Obsidian vault inside your current one without dup
 4. Set a **Virtual path** where it will appear in your current vault, e.g. `Reference`
 5. Click **Validate & Add**
 
-Folder Bridge automatically adds `.obsidian`, `.trash`, and `.smart-connections` to the ignore list for vault mounts to prevent the two vaults from interfering with each other.
+Multifolder automatically adds `.obsidian`, `.trash`, and `.smart-connections` to the ignore list for vault mounts to prevent the two vaults from interfering with each other.
 
 ---
 
@@ -267,7 +272,7 @@ Folder Bridge automatically adds `.obsidian`, `.trash`, and `.smart-connections`
 
 All mount settings can be changed without deleting and re-adding the mount.
 
-1. Open **Settings → Folder Bridge**
+1. Open **Settings → Multifolder**
 2. Click the **Edit** (pencil) button on any mount row
 3. Change any field — virtual path, real path, label, read-only flag, or watcher settings
 4. Click **Save**
@@ -280,7 +285,7 @@ The vault tree, file watcher, and all internal caches update live. No restart ne
 
 The order of mounts in the list determines the order they are checked during path resolution.
 
-- **Drag** a mount row up or down in **Settings → Folder Bridge** to reorder it
+- **Drag** a mount row up or down in **Settings → Multifolder** to reorder it
 - The new order is saved immediately
 
 ---
@@ -308,8 +313,8 @@ Prevent any write operations through a specific mount (useful for reference fold
 
 - Enable the **Read-only** toggle when adding or editing a mount, or click the **lock icon** directly on any mount row in Settings
 - The lock icon turns amber when a mount is read-only so you can see its state at a glance without opening the edit modal
-- Toggle all mounts at once with the **Folder Bridge: Toggle read-only on all mounts** command (assignable to a hotkey)
-- Toggle a single mount by name with the **Folder Bridge: Toggle read-only on a specific mount…** command (assignable to a hotkey)
+- Toggle all mounts at once with the **Multifolder: Toggle read-only on all mounts** command (assignable to a hotkey)
+- Toggle a single mount by name with the **Multifolder: Toggle read-only on a specific mount…** command (assignable to a hotkey)
 - Obsidian can still open, search, and read all files in the mount
 - Any attempt to create, edit, rename, or delete a file through the mount is silently blocked with a one-time Notice
 
@@ -320,7 +325,7 @@ Prevent any write operations through a specific mount (useful for reference fold
 Hide specific files or folders inside a mount from Obsidian. Useful for large directories (`node_modules`, build outputs) that would slow down indexing.
 
 **Adding entries manually:**
-1. Open **Settings → Folder Bridge**, expand the mount, and go to the **Ignore List** section
+1. Open **Settings → Multifolder**, expand the mount, and go to the **Ignore List** section
 2. Type a pattern and click **Add**
 
 **Adding entries with the folder picker (Browse…):**
@@ -331,7 +336,7 @@ Hide specific files or folders inside a mount from Obsidian. Useful for large di
 
 **Adding entries from the file explorer:**
 1. Right-click any file or folder inside a mounted directory
-2. Select **Ignore in Folder Bridge**
+2. Select **Ignore in Multifolder**
 3. The entry is added immediately and the item disappears from the file explorer
 
 **Pattern types:**
@@ -346,7 +351,7 @@ Hide specific files or folders inside a mount from Obsidian. Useful for large di
 
 ### Conflict Resolution & Health Monitoring
 
-Folder Bridge checks every active mount for reachability every **30 seconds** in the background.
+Multifolder checks every active mount for reachability every **30 seconds** in the background.
 
 **When a mount goes offline** (drive disconnected, network drop, WebDAV server unreachable):
 - An **orange indicator** appears in the Obsidian status bar
@@ -381,7 +386,7 @@ Each mount is tagged with the `deviceId` of the machine that created it. When yo
 
 **To map a mount to a different path on another device:**
 
-1. On the second device, open **Settings → Folder Bridge**
+1. On the second device, open **Settings → Multifolder**
 2. Find the mount (it will show a warning badge if the original path doesn't exist locally)
 3. Click **Override Path** and enter the correct local path for this device
 4. Click **Save**
@@ -389,7 +394,7 @@ Each mount is tagged with the `deviceId` of the machine that created it. When yo
 The override applies only to this device; the original path is preserved for the device that created it.
 
 **To let all mounts from other devices activate automatically (if paths match):**
-- Enable **Allow foreign mounts** in **Settings → Folder Bridge**
+- Enable **Allow foreign mounts** in **Settings → Multifolder**
 
 ---
 
@@ -409,29 +414,29 @@ The override applies only to this device; the original path is preserved for the
 ### Windows
 
 - **Long paths**: Paths over 260 characters are handled automatically with the `\\?\` prefix. For best results, also enable **Long Path Support** in Windows Settings → System → For Developers.
-- **Symlinks**: Creating symlinks on Windows requires either Developer Mode or administrator rights. Folder Bridge itself does not create symlinks, but the underlying filesystem may encounter related permission errors.
+- **Symlinks**: Creating symlinks on Windows requires either Developer Mode or administrator rights. Multifolder itself does not create symlinks, but the underlying filesystem may encounter related permission errors.
 - **UNC network paths** (`\\server\share\...`): Supported, but file-change watching may not work on some servers and the path may be unavailable offline.
-- **Reserved names**: Files and folders named `CON`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9` (Windows reserved device names) are blocked from creation via Folder Bridge to prevent cryptic OS errors.
+- **Reserved names**: Files and folders named `CON`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9` (Windows reserved device names) are blocked from creation via Multifolder to prevent cryptic OS errors.
 - **OneDrive Files On Demand**: Online-only placeholder files will show a user-friendly error rather than a raw ENOENT. Right-click the file in Explorer and choose **Always keep on this device** to make it locally accessible.
 
 ### macOS
 
-> ⚠️ **macOS has not yet been officially tested.** The POSIX code paths are fully implemented and should work, but there may be edge cases. If you run into issues, please [open an issue](https://github.com/tescolopio/Obsidian_FolderBridge/issues) — macOS bug reports are actively welcomed.
+> ⚠️ **macOS has not yet been officially tested.** The POSIX code paths are fully implemented and should work, but there may be edge cases. If you run into issues, please [open an issue](https://github.com/pssah4/obsidian-multifolder/issues) — macOS bug reports are actively welcomed.
 
 - Standard absolute paths work: `/Users/yourname/Documents/Work`
-- **iCloud Drive (optimized storage)**: Files set to "online only" behave like OneDrive placeholders — Folder Bridge will surface a friendly error. Open Finder, right-click the file, and choose **Download Now** to make it available locally.
+- **iCloud Drive (optimized storage)**: Files set to "online only" behave like OneDrive placeholders — Multifolder will surface a friendly error. Open Finder, right-click the file, and choose **Download Now** to make it available locally.
 
 ### Mobile (iOS / Android)
 
 **Android** — WebDAV and S3/B2 mounts are fully supported on Obsidian for Android (v2.0.0+). Connect to Nextcloud, ownCloud, a NAS, any WebDAV server, or an S3-compatible bucket from your phone — no extra apps required. Local and SFTP mounts are not available on Android due to the app sandbox. See the [Android Setup Guide](docs/ANDROID_SETUP.md) for step-by-step instructions.
 
-**iOS** — Not yet tested. WebDAV may work in theory (same code paths as Android) but is not officially supported. Feedback welcome via [GitHub Issues](https://github.com/tescolopio/Obsidian_FolderBridge/issues).
+**iOS** — Not yet tested. WebDAV may work in theory (same code paths as Android) but is not officially supported. Feedback welcome via [GitHub Issues](https://github.com/pssah4/obsidian-multifolder/issues).
 
 ---
 
 ## Architecture
 
-Folder Bridge installs a lightweight **virtual filesystem adapter shim** that intercepts every I/O call Obsidian makes to its vault:
+Multifolder installs a lightweight **virtual filesystem adapter shim** that intercepts every I/O call Obsidian makes to its vault:
 
 ```
 Obsidian → vault.adapter (Proxy) → VirtualAdapter
@@ -453,8 +458,8 @@ A JavaScript `Proxy` forwards all undocumented Obsidian-internal methods transpa
 ### Installation
 
 ```bash
-git clone https://github.com/tescolopio/Obsidian_FolderBridge.git
-cd Obsidian_FolderBridge
+git clone https://github.com/pssah4/obsidian-multifolder.git
+cd obsidian-multifolder
 npm install
 ```
 
@@ -462,10 +467,10 @@ npm install
 
 ```bash
 # Windows (PowerShell, run as administrator or with Developer Mode enabled)
-New-Item -ItemType Junction -Path "$env:APPDATA\obsidian\<YourVault>\.obsidian\plugins\folderbridge" -Target (Get-Location)
+New-Item -ItemType Junction -Path "$env:APPDATA\obsidian\<YourVault>\.obsidian\plugins\multifolder" -Target (Get-Location)
 
 # Linux / macOS
-ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/folderbridge"
+ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/multifolder"
 ```
 
 ### Build scripts
@@ -474,7 +479,7 @@ ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/folderbridge"
 npm run dev      # Watch mode with hot-reload
 npm run build    # Production build (type-checks first)
 npm test         # Run unit tests
-npm run version  # Bump version in manifest.json and versions.json
+npm version patch --no-git-tag-version  # Update all version files
 ```
 
 ### Project structure
@@ -503,14 +508,30 @@ npm run version  # Bump version in manifest.json and versions.json
 
 Contributions are welcome! Please open an issue or pull request.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT. The original work is Copyright (c) 2026 Tim Escolopio, modifications in this fork are
+Copyright (c) 2026 Sebastian Hanke. Both notices are kept in [LICENSE](LICENSE), as MIT requires.
 
 ## Attribution
 
-This plugin does not use code from other Obsidian plugins. It relies solely on the official Obsidian API and standard Node.js libraries.
+Multifolder is a fork and further development of [Folder Bridge](https://github.com/tescolopio/Obsidian_FolderBridge)
+by [Tim Escolopio](https://github.com/tescolopio). The mount architecture, the adapter layer for
+WebDAV, S3 and SFTP, and the bulk of the codebase are his work. Credit for the design belongs there.
+
+The fork exists because this setup needs changes the original does not aim for. What has diverged so far:
+
+- **Security hardening.** SFTP connections verify the server host key, which the original leaves to
+  ssh2's accept-everything default. The path allowlist resolves symlinks instead of comparing text,
+  closing an escape from mounted folders. The local media server rejects path traversal. Credentials
+  no longer sit in `sessionStorage` where any other plugin can read them. Remote WebDAV and S3
+  endpoints require https.
+- **Build and supply chain.** GitHub Actions pinned to commit SHAs, least-privilege workflow
+  permissions, and a packaging fix that broke `npm ci` on anything but linux-x64.
+
+Beyond the fork, the plugin uses no code from other Obsidian plugins. It relies on the official
+Obsidian API, standard Node.js libraries, and the documented dependencies in `package.json`.

@@ -1,6 +1,10 @@
 MIT License
 
-Copyright (c) 2026 Tim Escolopio
+Multifolder is a fork and further development of Folder Bridge by Tim Escolopio
+(https://github.com/tescolopio/Obsidian_FolderBridge).
+
+Copyright (c) 2026 Tim Escolopio          (original work)
+Copyright (c) 2026 Sebastian Hanke        (modifications in this fork)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

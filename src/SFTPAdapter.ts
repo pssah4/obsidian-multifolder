@@ -58,6 +58,57 @@ interface SFTPConnectOptions {
     password?: string;
     privateKey?: Buffer;
     passphrase?: string;
+    /**
+     * Verifies the server's host key.  ssh2 auto-accepts ANY host key when this
+     * is absent, which leaves the connection open to a machine-in-the-middle.
+     */
+    hostVerifier?: (key: Buffer) => boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Host key verification
+// ---------------------------------------------------------------------------
+
+/**
+ * OpenSSH-style fingerprint of a server host key: "SHA256:<base64 without padding>".
+ * Matches what `ssh-keyscan` and the OpenSSH client print, so a user can compare
+ * the value shown by Multifolder against their own known_hosts entry.
+ */
+export function fingerprintHostKey(key: Buffer): string {
+    const nodeCrypto = loadOptionalNodeModule<typeof import('crypto')>('crypto');
+    if (!nodeCrypto) throw new Error('crypto is unavailable in this environment');
+    const digest = nodeCrypto.createHash('sha256').update(key).digest('base64');
+    return `SHA256:${digest.replace(/=+$/, '')}`;
+}
+
+/**
+ * Build the `hostVerifier` for an SFTP connection.
+ *
+ * With a pinned fingerprint the server key must match it, so a substituted
+ * server is rejected.  Without one the first key seen is accepted and reported
+ * through `onLearn` so the caller can persist it (trust on first use); every
+ * later key in the same session is then checked against that first one.
+ */
+export function createHostVerifier(options: {
+    knownFingerprint?: string;
+    onLearn?: (fingerprint: string) => void;
+}): (key: Buffer) => boolean {
+    let pinned = options.knownFingerprint;
+    return (key: Buffer): boolean => {
+        if (!key || key.length === 0) return false;
+        let actual: string;
+        try {
+            actual = fingerprintHostKey(key);
+        } catch {
+            return false;   // no crypto available: fail closed rather than accept
+        }
+        if (!pinned) {
+            pinned = actual;
+            options.onLearn?.(actual);
+            return true;
+        }
+        return actual === pinned;
+    };
 }
 
 function loadSFTPClient(): new () => SFTPClientInstance {
@@ -88,6 +139,10 @@ export class SFTPAdapter {
     private password?: string;
     private privateKeyPath?: string;
     private passphrase?: string;
+    /** Pinned server host key fingerprint, or undefined until one is learned. */
+    private knownHostFingerprint?: string;
+    /** Called once when a host key is learned, so the caller can persist it. */
+    private onHostKeyLearned?: (fingerprint: string) => void;
 
     // The sftp client instance; recreated on connect
     private sftp: SFTPClientInstance | null = null;
@@ -102,6 +157,8 @@ export class SFTPAdapter {
             password?: string;
             privateKeyPath?: string;
             passphrase?: string;
+            knownHostFingerprint?: string;
+            onHostKeyLearned?: (fingerprint: string) => void;
         }
     ) {
         this.host = host;
@@ -110,6 +167,8 @@ export class SFTPAdapter {
         this.password = options.password;
         this.privateKeyPath = options.privateKeyPath;
         this.passphrase = options.passphrase;
+        this.knownHostFingerprint = options.knownHostFingerprint;
+        this.onHostKeyLearned = options.onHostKeyLearned;
     }
 
     // ------------------------------------------------------------------
@@ -121,7 +180,10 @@ export class SFTPAdapter {
      * transient fields, sessionStorage, or encrypted blobs (in that order).
      * Returns null if required fields are missing.
      */
-    static fromMount(mount: MountPoint): SFTPAdapter | null {
+    static fromMount(
+        mount: MountPoint,
+        onHostKeyLearned?: (fingerprint: string) => void
+    ): SFTPAdapter | null {
         if (!mount.sftpHost || !mount.sftpUsername) return null;
 
         const password =
@@ -144,6 +206,8 @@ export class SFTPAdapter {
                 password,
                 privateKeyPath: mount.sftpPrivateKeyPath ?? undefined,
                 passphrase,
+                knownHostFingerprint: mount.sftpHostKeyFingerprint ?? undefined,
+                onHostKeyLearned,
             }
         );
     }
@@ -173,6 +237,14 @@ export class SFTPAdapter {
             host: this.host,
             port: this.port,
             username: this.username,
+            // Without this ssh2 accepts any host key presented to it.
+            hostVerifier: createHostVerifier({
+                knownFingerprint: this.knownHostFingerprint,
+                onLearn: (fingerprint) => {
+                    this.knownHostFingerprint = fingerprint;
+                    this.onHostKeyLearned?.(fingerprint);
+                },
+            }),
         };
 
         if (this.privateKeyPath) {
@@ -293,7 +365,7 @@ export class SFTPAdapter {
                 }
             }
         } catch (e) {
-            logger.error(`[Folder Bridge] SFTP list failed for "${serverPath}":`, e);
+            logger.error(`[Multifolder] SFTP list failed for "${serverPath}":`, e);
         }
         return { files, folders };
     }

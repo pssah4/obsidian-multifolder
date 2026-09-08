@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug or issue with FolderBridge
+about: Report a bug or issue with Multifolder
 title: '[BUG] '
 labels: bug
 assignees: ''

@@ -1,6 +1,6 @@
 # TOC Config Guide
 
-Folder Bridge can read JSON TOC files that define mounts and ignore rules.
+Multifolder can read JSON TOC files that define mounts and ignore rules.
 
 You can use this in two ways:
 
@@ -13,7 +13,7 @@ This is the right setup when you want a durable source of truth for a larger mou
 
 A TOC file is a JSON object with one top-level `mounts` array.
 
-Each object inside `mounts` becomes one Folder Bridge mount when the plugin loads.
+Each object inside `mounts` becomes one Multifolder mount when the plugin loads.
 
 Current scope:
 
@@ -22,11 +22,11 @@ Current scope:
 - One managed TOC file can be writable from the Settings UI.
 - Additional external TOC files stay read-only in the Settings UI.
 - Credentials are not supported in TOC files.
-- You can configure the managed TOC file and register additional external TOC files in **Settings → Folder Bridge**.
+- You can configure the managed TOC file and register additional external TOC files in **Settings → Multifolder**.
 
 ## Managed vs External TOC Files
 
-Folder Bridge supports two TOC roles:
+Multifolder supports two TOC roles:
 
 - Managed TOC file: an optional writable file used by the Settings UI for local and vault mounts. When this is configured, new local and vault mounts created in Settings are written there instead of `data.json`.
 - External TOC files: additional authoritative files loaded at runtime. These mounts appear in Settings, but you edit them in their source file.
@@ -37,10 +37,10 @@ This gives you one editable JSON source for day-to-day UI-driven mounts without 
 
 If you already built your mount list in Settings, you do not need to rebuild it by hand.
 
-1. Open **Settings → Folder Bridge → Managed TOC file**.
+1. Open **Settings → Multifolder → Managed TOC file**.
 2. Accept the suggested path or enter your own writable JSON path.
 3. Click **Create from current UI mounts**.
-4. Folder Bridge will create the file, bind the UI to it, and move your existing local/vault UI mounts into that file.
+4. Multifolder will create the file, bind the UI to it, and move your existing local/vault UI mounts into that file.
 
 Cloud mounts such as WebDAV, S3, and SFTP remain in `data.json` because TOC files do not support credentials.
 
@@ -151,7 +151,7 @@ Allowed values:
 - `local`
 - `vault`
 
-If omitted, Folder Bridge uses `local`.
+If omitted, Multifolder uses `local`.
 
 Not currently supported in TOC files:
 
@@ -184,7 +184,7 @@ Use this when the same logical mount exists at different real paths on different
 }
 ```
 
-The keys must match Folder Bridge device IDs.
+The keys must match Multifolder device IDs.
 
 ### Watcher and scan fields
 
@@ -344,11 +344,11 @@ Check:
 
 ### A mount is shown but cannot be edited
 
-That is expected for external TOC mounts. Managed TOC mounts remain editable from Settings because Folder Bridge writes changes back to the managed file for you.
+That is expected for external TOC mounts. Managed TOC mounts remain editable from Settings because Multifolder writes changes back to the managed file for you.
 
 ### A path works on one machine but not another
 
-Use `deviceOverrides` and confirm the device ID shown in Folder Bridge settings.
+Use `deviceOverrides` and confirm the device ID shown in Multifolder settings.
 
 ### Ignore rules do not behave as expected
 

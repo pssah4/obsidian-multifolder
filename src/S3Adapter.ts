@@ -348,7 +348,7 @@ export class S3Adapter {
                 continuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined;
             } while (continuationToken);
         } catch (e) {
-            logger.error(`[Folder Bridge] S3 list failed for "${serverPath}":`, e);
+            logger.error(`[Multifolder] S3 list failed for "${serverPath}":`, e);
         }
 
         return { files, folders };

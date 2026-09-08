@@ -1,7 +1,7 @@
 import { App, Modal, Setting } from 'obsidian';
 
 /**
- * First-run welcome modal shown once when Folder Bridge is loaded with no
+ * First-run welcome modal shown once when Multifolder is loaded with no
  * mounts configured.  Gives new users a quick orientation and a direct path
  * to adding their first mount without having to hunt through Settings.
  */
@@ -18,26 +18,26 @@ export class WelcomeModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		const pluginName = 'Folder Bridge';
+		const pluginName = 'Multifolder';
 		const quickSwitcher = 'Quick Switcher';
 
 		contentEl.createEl('h2', { text: `Welcome to ${pluginName}` });
 
-		const descEl = contentEl.createDiv({ cls: 'folderbridge-welcome-desc' });
+		const descEl = contentEl.createDiv({ cls: 'multifolder-welcome-desc' });
 
 		descEl.createEl('p', {
 			text: `${pluginName} lets you mount external folders into your vault as seamless, native-feeling directories, with no copying, duplication, or symlinks required.`,
-		}).addClass('folderbridge-welcome-intro');
+		}).addClass('multifolder-welcome-intro');
 
-		descEl.createEl('p', { text: 'What you can mount' }).addClass('folderbridge-welcome-intro');
+		descEl.createEl('p', { text: 'What you can mount' }).addClass('multifolder-welcome-intro');
 
-		const list = descEl.createEl('ul', { cls: 'folderbridge-feature-list' });
+		const list = descEl.createEl('ul', { cls: 'multifolder-feature-list' });
 		for (const item of [
 			'Local folders on this device (or a connected drive)',
 			'WebDAV servers — Nextcloud, ownCloud, NAS, Synology',
 			'Folders from another Obsidian vault on this device',
 		]) {
-			list.createEl('li', { text: item, cls: 'folderbridge-feature-item' });
+			list.createEl('li', { text: item, cls: 'multifolder-feature-item' });
 		}
 
 		descEl.createEl('p', {
@@ -45,7 +45,7 @@ export class WelcomeModal extends Modal {
 			cls: 'setting-item-description',
 		});
 
-		const tipBox = contentEl.createDiv({ cls: 'folderbridge-tip-box' });
+		const tipBox = contentEl.createDiv({ cls: 'multifolder-tip-box' });
 		tipBox.createEl('strong', { text: '💡 quick tip: ' });
 		tipBox.appendText('After adding a mount, you can manage it from ');
 		tipBox.createEl('strong', { text: `Settings, then ${pluginName}` });

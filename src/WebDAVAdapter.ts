@@ -127,7 +127,7 @@ export class WebDAVAdapter {
                 }
             }
         } catch (e) {
-            logger.error(`[Folder Bridge] WebDAV list failed for "${serverPath}":`, e);
+            logger.error(`[Multifolder] WebDAV list failed for "${serverPath}":`, e);
         }
         return { files, folders };
     }

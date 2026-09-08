@@ -1,6 +1,6 @@
-# Example FolderBridge Configuration
+# Example Multifolder Configuration
 
-This file demonstrates how to configure mount points for the FolderBridge plugin.
+This file demonstrates how to configure mount points for the Multifolder plugin.
 Mount points are configured through the Obsidian settings UI, but this example shows the data structure.
 
 ## Configuration Structure
