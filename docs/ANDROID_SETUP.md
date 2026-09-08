@@ -1,21 +1,21 @@
 # Android / Mobile Setup Guide
 
-Use FolderBridge on your Android phone to access files stored on your **Nextcloud, NAS, WebDAV server, or S3-compatible bucket** — no computer required, no cable, no sync client.
+Use Multifolder on your Android phone to access files stored on your **Nextcloud, NAS, WebDAV server, or S3-compatible bucket** — no computer required, no cable, no sync client.
 
 ---
 
 ## The pitch
 
-If you run Nextcloud at home, have a NAS, or keep work files on a server, FolderBridge on mobile gives you full read/write access to those files inside Obsidian — from anywhere with internet (or WiFi).
+If you run Nextcloud at home, have a NAS, or keep work files on a server, Multifolder on mobile gives you full read/write access to those files inside Obsidian — from anywhere with internet (or WiFi).
 
 ```
 Your Android phone
-  → FolderBridge (HTTP/WebDAV)
+  → Multifolder (HTTP/WebDAV)
     → Nextcloud / NAS / home server
       → Your project files, documents, reference library
 ```
 
-No extra apps. No setup on the phone beyond installing FolderBridge. Just enter your WebDAV URL and credentials.
+No extra apps. No setup on the phone beyond installing Multifolder. Just enter your WebDAV URL and credentials.
 
 ---
 
@@ -50,15 +50,17 @@ Use the URL your server admin provides. It must start with `http://` or `https:/
 
 ---
 
-## Step 2 — Install FolderBridge
+## Step 2 — Install Multifolder
 
-Settings → **Community Plugins** → Browse → search **Folder Bridge** → Install → Enable
+Install and enable **BRAT** from Community Plugins. In BRAT, add
+`https://github.com/pssah4/obsidian-multifolder`, then enable **Multifolder**.
+See the [installation instructions](../README.md#installation).
 
 ---
 
 ## Step 3 — Add a mount
 
-1. Open Obsidian → **Settings → FolderBridge**
+1. Open Obsidian → **Settings → Multifolder**
 2. Tap **Add Mount**
 3. Fill in the fields:
 
@@ -98,7 +100,7 @@ The folder appears in Obsidian's file explorer. Browse, open, edit, and create f
 - Nextcloud users: if you use two-factor authentication, generate an **App Password** in Nextcloud Settings → Security → Devices & sessions
 
 ### Files appear but images don't load
-- Images in mounted folders are served as data: URIs — this works for files under the configured size cap (default 10 MB, adjustable in FolderBridge Settings → General → Image / PDF size cap)
+- Images in mounted folders are served as data: URIs — this works for files under the configured size cap (default 10 MB, adjustable in Multifolder Settings → General → Image / PDF size cap)
 - Very large images won't embed — open them directly instead
 
 ### Slow performance on mobile
@@ -113,7 +115,7 @@ If you want to access files that are **only on your Android device** (e.g. Downl
 
 1. Install [CX File Explorer](https://play.google.com/store/apps/details?id=com.cxinventor.file.explorer) from the Play Store
 2. Open CX File Explorer → tap **Network** → **Remote Access** → **Start**
-3. In FolderBridge, use `http://localhost:8888/` as the WebDAV URL (adjust port as shown in the app)
+3. In Multifolder, use `http://localhost:8888/` as the WebDAV URL (adjust port as shown in the app)
 
 Note: You need to keep the server app running in the background — Android may kill it to save battery. Enable "Run in background" in the app's settings and exclude it from battery optimisation.
 

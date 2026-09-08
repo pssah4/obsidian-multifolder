@@ -1,6 +1,6 @@
 # Publishing & Release Checklist
 
-This document defines every step required to release a new version of FolderBridge and pass all automated and manual checks for the Obsidian Community Plugin directory.
+This document defines every step required to release a new version of Multifolder and pass all automated and manual checks for the Obsidian Community Plugin directory.
 
 ---
 
@@ -29,7 +29,7 @@ The Obsidian community-plugin bot validates these automatically when a PR is ope
 | `eval()` | ❌ Banned | ✅ Not used |
 | `fetch()` for network requests | ❌ Use `requestUrl` instead | ✅ WebDAV/S3/SFTP use their own authenticated clients; no bare `fetch` |
 | Hard-coded `.obsidian` path | ❌ Banned | ✅ Uses `app.vault.configDir` |
-| Inline `element.style.*` assignments | ❌ Use CSS classes | ✅ All styles in `styles.css` with `folderbridge-*` prefix |
+| Inline `element.style.*` assignments | ❌ Use CSS classes | ✅ All styles in `styles.css` with `multifolder-*` prefix |
 | Unsafe `as TFile` / `as TFolder` casts | ⚠️ Reviewer flag | ✅ Uses `instanceof` narrowing |
 | `require()` at module scope | ⚠️ Breaks mobile | ✅ Uses `loadOptionalNodeModule()` lazy loader |
 | Floating `Promise`s | ⚠️ Reviewer flag | ✅ Wrapped with `void` operator |
@@ -73,34 +73,21 @@ Each bullet must be specific enough for a user to understand what changed and wh
 
 ### 2b. Run the version bump
 
-Stage the changelog, then run `npm version`. The `version` lifecycle hook updates `manifest.json` and `versions.json` automatically. `.npmrc` is configured with `tag-version-prefix=` so the git tag is created **without a `v` prefix** — this is required for the GitHub Actions release workflow to fire.
+Run `npm version X.Y.Z --no-git-tag-version`. The version hook updates
+`manifest.json` and `versions.json`; npm also updates `package.json` and `package-lock.json`.
+Run `npm run validate`, review and commit the changed files individually.
+
+### 2c. Merge and publish
+
+Merge the release branch into `dev`, then merge `dev` into `main`. Push both branches.
+Create the tag on the merged `main` commit and push only that tag:
 
 ```sh
-# Stage your changelog entry first
-git add CHANGELOG.md
-
-# For a patch release (bug fixes only):
-npm version patch
-
-# For a minor release (new features, backwards-compatible):
-npm version minor
-
-# For a major release (breaking changes):
-npm version major
+git tag X.Y.Z
+git push origin X.Y.Z
 ```
 
-`npm version` will:
-1. Bump `package.json`, `manifest.json`, `versions.json`
-2. Commit all staged files with message `Release X.Y.Z`
-3. Create git tag `X.Y.Z` (**no `v` prefix** — critical for the release workflow)
-
-> ⚠️ **Never** run `npm version --no-git-tag-version` and manually `git tag vX.Y.Z`. The `v` prefix breaks the `release.yml` trigger pattern `[0-9]*.[0-9]*.[0-9]*`, so the GitHub release with assets will never be created.
-
-### 2c. Push the commit and tag
-
-```sh
-git push && git push origin X.Y.Z
-```
+Tags must match `manifest.json` exactly, without a `v` prefix.
 
 The `release.yml` GitHub Actions workflow triggers automatically on the `X.Y.Z` tag. It will:
 1. Install deps, run tests, build `main.js`
@@ -121,7 +108,7 @@ These are the reviewer criteria drawn from the [official plugin guidelines](http
 ### Required files
 
 - `README.md` — describes the plugin's purpose and usage
-- `LICENSE` — open-source license (FolderBridge uses MIT)
+- `LICENSE` — open-source license (Multifolder uses MIT)
 - `manifest.json` — valid with all required fields
 - `versions.json` — version-to-minAppVersion map
 - `main.js` — production bundle (in GitHub release assets, not committed to repo)
@@ -147,7 +134,7 @@ These are the reviewer criteria drawn from the [official plugin guidelines](http
 ### UI / UX requirements
 
 - Use sentence case for UI labels (✅ enforced since v2.5.0)
-- Prefix all CSS classes with the plugin ID (`folderbridge-*`) (✅ done)
+- Prefix all CSS classes with the plugin ID (`multifolder-*`) (✅ done)
 - No modal or notice spam — one notice per action, non-blocking where possible (✅ done)
 - Settings must be self-explanatory or have description text (✅ every setting has `.setDesc()`)
 
@@ -162,11 +149,11 @@ This only needs to be done once (initial submission). Subsequent releases only r
 
 ```json
 {
-  "id": "folderbridge",
-  "name": "Folder Bridge",
-  "author": "Timmothy Escolopio",
+  "id": "multifolder",
+  "name": "Multifolder",
+  "author": "Sebastian Hanke",
   "description": "Adds external folders to your vault as seamless, native-feeling directories. Supports local filesystem, WebDAV, S3/Backblaze B2, and SFTP mounts.",
-  "repo": "tescolopio/Obsidian_FolderBridge",
+  "repo": "pssah4/obsidian-multifolder",
   "branch": "main"
 }
 ```

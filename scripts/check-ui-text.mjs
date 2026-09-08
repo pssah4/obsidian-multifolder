@@ -68,7 +68,7 @@ const knownProperPhrases = [
     'Amazon S3',
     'Backblaze B2',
     'Cloudflare R2',
-    'Folder Bridge',
+    'Multifolder',
     'GitHub',
     'Linux',
     'MinIO',
@@ -199,7 +199,7 @@ function lintTextFragment(text) {
     if (!trimmed) return issues;
 
     if (/Folder bridge\b/.test(trimmed)) {
-        issues.push('Use "Folder Bridge" branding in UI text.');
+        issues.push('Use "Multifolder" branding in UI text.');
     }
 
     if (decorativeStatusIcons.test(trimmed)) {

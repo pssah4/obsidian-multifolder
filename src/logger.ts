@@ -1,6 +1,6 @@
 type LoggerLevel = 'debug' | 'warn' | 'error';
 
-const LOG_PREFIX = '[FolderBridge]';
+const LOG_PREFIX = '[Multifolder]';
 
 function normalizeArgs(args: unknown[]): unknown[] {
     if (args.length === 0) {
@@ -9,7 +9,7 @@ function normalizeArgs(args: unknown[]): unknown[] {
 
     const [first, ...rest] = args;
     if (typeof first === 'string') {
-        if (first.startsWith('[FolderBridge]') || first.startsWith('[Folder Bridge]')) {
+        if (first.startsWith('[Multifolder]') || first.startsWith('[Multifolder]')) {
             return args;
         }
         return [`${LOG_PREFIX} ${first}`, ...rest];

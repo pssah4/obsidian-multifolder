@@ -48,7 +48,7 @@ export class FileWatcher {
      * mount.  This lets external scripts (Templater, JS Engine, QuickAdd) mute
      * Obsidian plugin reactions during bulk-sync windows:
      *
-     *   const fb = app.plugins.getPlugin('folderbridge');
+     *   const fb = app.plugins.getPlugin('multifolder');
      *   fb.setWatcherSuppressed(null, true);   // mute all mounts
      *   // … run sync …
      *   fb.setWatcherSuppressed(null, false);  // restore
@@ -63,7 +63,7 @@ export class FileWatcher {
     }
 
     private warnWatcherUnavailable(mount: MountPoint, error: unknown): void {
-        logger.warn(`[FolderBridge] File watcher unavailable for mount ${mount.virtualPath}:`, error);
+        logger.warn(`[Multifolder] File watcher unavailable for mount ${mount.virtualPath}:`, error);
         if (this.watcherBackendWarningShown) return;
         this.watcherBackendWarningShown = true;
         if (typeof Notice === 'function') {
@@ -107,14 +107,14 @@ export class FileWatcher {
         // Capacitor WebView on Android / iOS.  Skip file watching on mobile entirely;
         // the vault is refreshed manually or via WebDAV polling.
         if (Platform.isMobile) {
-            logger.debug(`[FolderBridge] Skipping file watcher on mobile for: ${mount.virtualPath}`);
+            logger.debug(`[Multifolder] Skipping file watcher on mobile for: ${mount.virtualPath}`);
             return;
         }
 
         // Cloud mounts (WebDAV, S3, SFTP) are accessed over the network — there
         // is no local filesystem path to watch for native change events.
         if (mount.mountType === 'webdav' || mount.mountType === 's3' || mount.mountType === 'sftp') {
-            logger.debug(`[FolderBridge] Skipping file watcher for ${mount.mountType ?? 'remote'} mount: ${mount.virtualPath}`);
+            logger.debug(`[Multifolder] Skipping file watcher for ${mount.mountType ?? 'remote'} mount: ${mount.virtualPath}`);
             return;
         }
 
@@ -184,10 +184,10 @@ export class FileWatcher {
             .on('unlink', (filePath) => this.handleEvent('file-removed', filePath, mount))
             .on('addDir', (dirPath) => this.handleEvent('folder-created', dirPath, mount))
             .on('unlinkDir', (dirPath) => this.handleEvent('folder-removed', dirPath, mount))
-            .on('error', (error) => logger.warn(`[FolderBridge] Watcher error for mount ${mount.virtualPath}:`, error));
+            .on('error', (error) => logger.warn(`[Multifolder] Watcher error for mount ${mount.virtualPath}:`, error));
 
         this.watchers.set(mount.id, watcher);
-        logger.debug(`[FolderBridge] Started watching: ${realPath}`);
+        logger.debug(`[Multifolder] Started watching: ${realPath}`);
     }
 
     /**
@@ -198,7 +198,7 @@ export class FileWatcher {
         if (watcher) {
             void watcher.close();
             this.watchers.delete(mount.id);
-            logger.debug(`[FolderBridge] Stopped watching: ${this.pathMapper.getEffectiveRealPath(mount)}`);
+            logger.debug(`[Multifolder] Stopped watching: ${this.pathMapper.getEffectiveRealPath(mount)}`);
         }
     }
 
@@ -249,7 +249,7 @@ export class FileWatcher {
         // Checked before any path mapping so suppression has zero overhead.
         // Also honours the persistent per-mount `watcherSuppressAllEvents` flag.
         if (this.isSuppressed(mount.id) || mount.watcherSuppressAllEvents) {
-            logger.debug(`[FolderBridge] watcher events suppressed for mount "${mount.virtualPath}" — dropped ${eventType} for ${realPath}`);
+            logger.debug(`[Multifolder] watcher events suppressed for mount "${mount.virtualPath}" — dropped ${eventType} for ${realPath}`);
             return;
         }
 
@@ -261,7 +261,7 @@ export class FileWatcher {
         const normalizedPath = normalizePath(virtualPath);
 
         if ((eventType === 'file-created' || eventType === 'file-changed' || eventType === 'file-removed') && !isVisibleFileInMount(normalizedPath, mount)) {
-            logger.debug(`[FolderBridge] visibleFileFilter suppressed ${eventType} for ${normalizedPath}`);
+            logger.debug(`[Multifolder] visibleFileFilter suppressed ${eventType} for ${normalizedPath}`);
             return;
         }
 
@@ -273,7 +273,7 @@ export class FileWatcher {
         if (eventType === 'file-created' && mount.watcherCreateFilter === 'markdown-only') {
             const ext = path.extname(normalizedPath).toLowerCase();
             if (!MARKDOWN_EXTENSIONS.has(ext)) {
-                logger.debug(`[FolderBridge] watcherCreateFilter=markdown-only: suppressed file-created for ${normalizedPath}`);
+                logger.debug(`[Multifolder] watcherCreateFilter=markdown-only: suppressed file-created for ${normalizedPath}`);
                 return;
             }
         }
@@ -303,7 +303,7 @@ export class FileWatcher {
                 await vault.onChange('raw', normalizedPath, null, null);
             }
         } catch (e) {
-            logger.debug(`[FolderBridge] Failed to handle watcher event ${eventType} for ${normalizedPath}:`, e);
+            logger.debug(`[Multifolder] Failed to handle watcher event ${eventType} for ${normalizedPath}:`, e);
         }
     }
 }

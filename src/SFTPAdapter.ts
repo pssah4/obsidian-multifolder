@@ -72,7 +72,7 @@ interface SFTPConnectOptions {
 /**
  * OpenSSH-style fingerprint of a server host key: "SHA256:<base64 without padding>".
  * Matches what `ssh-keyscan` and the OpenSSH client print, so a user can compare
- * the value shown by Folder Bridge against their own known_hosts entry.
+ * the value shown by Multifolder against their own known_hosts entry.
  */
 export function fingerprintHostKey(key: Buffer): string {
     const nodeCrypto = loadOptionalNodeModule<typeof import('crypto')>('crypto');
@@ -365,7 +365,7 @@ export class SFTPAdapter {
                 }
             }
         } catch (e) {
-            logger.error(`[Folder Bridge] SFTP list failed for "${serverPath}":`, e);
+            logger.error(`[Multifolder] SFTP list failed for "${serverPath}":`, e);
         }
         return { files, folders };
     }

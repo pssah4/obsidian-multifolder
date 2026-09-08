@@ -434,7 +434,7 @@ export function translateFsError(err: NodeJS.ErrnoException, op: string): string
 		case 'ENOSPC':
 			return `Not enough disk space to complete the operation.`;
 		case 'EXDEV':
-			return `Cross-device move is not supported at the OS level (handled internally by FolderBridge).`;
+			return `Cross-device move is not supported at the OS level (handled internally by Multifolder).`;
 		default:
 			return `${op}: ${err.message}`;
 	}
