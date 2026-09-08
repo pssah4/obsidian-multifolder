@@ -1,6 +1,6 @@
 # Multifolder
 
-> **A fork of [Folder Bridge](https://github.com/tescolopio/Obsidian_FolderBridge) by Tim Escolopio**, maintained
+> **A fork and further development of [Folder Bridge](https://github.com/tescolopio/Obsidian_FolderBridge) by Tim Escolopio**, maintained
 > separately for a different set of needs. The original does the heavy lifting; this fork adds security hardening
 > and changes aimed at a multi-vault setup. Both are MIT licensed. See [Attribution](#attribution) for what differs.
 
@@ -8,14 +8,15 @@ Extends Obsidian's single-root vault by letting you mount external folders as se
 
 ---
 
-## Full Feature List (v2.14.0)
+## Release 2.16.1
 
-Current release highlights:
+- Released as **Multifolder**, with its own plugin ID (`multifolder`).
+- Explicit attribution to Folder Bridge and its author in the README, license, and settings.
+- Includes the security hardening from 2.16.0: SFTP host-key verification, symlink-aware path checks, and local media server protection.
 
-- **Managed TOC workflow** for UI-created local and vault mounts
-- **Mounted delete sync fix** so deleted mounted notes disappear from Obsidian immediately
-- **Community-plugin reviewer cleanup** in the TOC parser to remove a non-narrowing type assertion warning without changing runtime behavior
-- **Local UI copy validation** with a reviewer-focused text check and pre-commit hook support
+See the [changelog](CHANGELOG.md) for the release history.
+
+## Full Feature List
 
 ### Core
 
@@ -102,15 +103,9 @@ Quick compatibility summary. For platform-specific caveats and setup notes, see 
 
 ## Installation
 
-### From Obsidian Community Plugins (recommended)
+### Using BRAT (recommended)
 
-1. Open **Settings → Community Plugins** and disable Safe Mode if needed
-2. Click **Browse** and search for **Multifolder**
-3. Install and enable the plugin
-
-### Using BRAT (Beta Reviewers Auto-update Tool)
-
-To test the latest pre-release versions ahead of an official release, you can install via [BRAT](https://tfthacker.com/BRAT):
+Install Multifolder through [BRAT](https://github.com/TfTHacker/obsidian42-brat) using this repository's GitHub releases:
 
 1. Install the **Obsidian42 - BRAT** plugin from the Community Plugins directory.
 2. Enable BRAT in your settings.
@@ -120,9 +115,15 @@ To test the latest pre-release versions ahead of an official release, you can in
 
 ### Manual Installation
 
-1. Download `main.js` and `manifest.json` from the [latest release](https://github.com/pssah4/obsidian-multifolder/releases/latest)
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/pssah4/obsidian-multifolder/releases/latest)
 2. Copy them to `<your-vault>/.obsidian/plugins/multifolder/`
 3. Enable the plugin in **Settings → Community Plugins**
+
+### Moving from Folder Bridge
+
+Multifolder has a separate plugin ID, so Folder Bridge settings are not imported automatically.
+Disable Folder Bridge before enabling Multifolder in the same vault. To reuse mount definitions,
+export them from Folder Bridge and import them into Multifolder; re-enter remote credentials as needed.
 
 ### Local Development (git clone)
 
@@ -458,7 +459,7 @@ A JavaScript `Proxy` forwards all undocumented Obsidian-internal methods transpa
 
 ```bash
 git clone https://github.com/pssah4/obsidian-multifolder.git
-cd Obsidian_Multifolder
+cd obsidian-multifolder
 npm install
 ```
 
@@ -478,7 +479,7 @@ ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/multifolder"
 npm run dev      # Watch mode with hot-reload
 npm run build    # Production build (type-checks first)
 npm test         # Run unit tests
-npm run version  # Bump version in manifest.json and versions.json
+npm version patch --no-git-tag-version  # Update all version files
 ```
 
 ### Project structure
@@ -507,7 +508,7 @@ npm run version  # Bump version in manifest.json and versions.json
 
 Contributions are welcome! Please open an issue or pull request.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 ---
 
@@ -518,7 +519,7 @@ Copyright (c) 2026 Sebastian Hanke. Both notices are kept in [LICENSE](LICENSE),
 
 ## Attribution
 
-Multifolder is a fork of [Folder Bridge](https://github.com/tescolopio/Obsidian_FolderBridge)
+Multifolder is a fork and further development of [Folder Bridge](https://github.com/tescolopio/Obsidian_FolderBridge)
 by [Tim Escolopio](https://github.com/tescolopio). The mount architecture, the adapter layer for
 WebDAV, S3 and SFTP, and the bulk of the codebase are his work. Credit for the design belongs there.
 

@@ -32,7 +32,7 @@ This document provides detailed instructions for setting up and developing the M
 ```bash
 # Clone the repository
 git clone https://github.com/pssah4/obsidian-multifolder.git
-cd Obsidian_Multifolder
+cd obsidian-multifolder
 
 # Install dependencies
 npm install
@@ -48,12 +48,12 @@ TypeScript is already configured via `tsconfig.json`. The configuration includes
 
 No additional configuration needed.
 
-### 3. Enable Developer Mode in Obsidian
+### 3. Allow Community Plugins in Obsidian
 
 1. Open Obsidian
 2. Navigate to: **Settings** → **Community Plugins**
 3. Make sure **"Restricted mode"** is turned **off** so community plugins can run
-4. Click **"Turn on Developer Mode"** (appears once Restricted mode is off and Community Plugins are enabled)
+4. After linking the plugin below, restart Obsidian and enable **Multifolder** in the installed plugins list.
 
 ### 4. Link Plugin to Obsidian Vault
 
@@ -61,19 +61,19 @@ Create a symbolic link from your vault's plugins directory to this project:
 
 **macOS/Linux:**
 ```bash
-ln -s "$(pwd)" "/path/to/your/vault/.obsidian/plugins/obsidian-multifolder"
+ln -s "$(pwd)" "/path/to/your/vault/.obsidian/plugins/multifolder"
 ```
 
 **Windows (PowerShell as Administrator):**
 ```powershell
-New-Item -ItemType SymbolicLink -Path "C:\path\to\your\vault\.obsidian\plugins\obsidian-multifolder" -Target "$(Get-Location)"
+New-Item -ItemType SymbolicLink -Path "C:\path\to\your\vault\.obsidian\plugins\multifolder" -Target "$(Get-Location)"
 ```
 
 **Alternative (Copy Method):**
 If symbolic links don't work on your system, you can manually copy files after each build:
 ```bash
 # After running npm run build
-cp main.js manifest.json styles.css "/path/to/your/vault/.obsidian/plugins/obsidian-multifolder/"
+cp main.js manifest.json styles.css "/path/to/your/vault/.obsidian/plugins/multifolder/"
 ```
 
 ## Development Workflow
@@ -128,32 +128,10 @@ npm run version
 
 ## Releasing a New Version
 
-The release pipeline is fully automated via GitHub Actions (`.github/workflows/release.yml`).
-To cut a release:
-
-1. **Update `CHANGELOG.md`** — add a new `## [X.Y.Z] - YYYY-MM-DD` section above the previous release with the changes for this version, and add a link reference at the bottom.
-
-2. **Bump the version** — run the following command (replace `X.Y.Z` with the new version):
-   ```bash
-   npm version X.Y.Z
-   ```
-   This will:
-   - Update `package.json`, `manifest.json`, and `versions.json` with the new version
-   - Create a Git commit (`chore: X.Y.Z`)
-   - Create a Git tag `X.Y.Z` (no `v` prefix — configured via `.npmrc`)
-
-3. **Push the commit and tag**:
-   ```bash
-   git push && git push --tags
-   ```
-
-4. **GitHub Actions takes over** — pushing the `X.Y.Z` tag triggers the release workflow, which:
-   - Runs tests and the production build
-   - Validates the tag matches `manifest.json`
-   - Extracts release notes from `CHANGELOG.md`
-   - Creates a GitHub Release with `main.js`, `manifest.json`, and `styles.css` as downloadable assets
-
-> **Note:** The tag must not have a `v` prefix (e.g. use `0.2.0`, not `v0.2.0`). The `.npmrc` setting `tag-version-prefix=` ensures `npm version` honors this automatically.
+Follow [Publishing & Release Checklist](PUBLISHING.md) for versioning, validation,
+the `dev` → `main` merge flow, and publishing. Pushing a version tag without a `v`
+prefix triggers `.github/workflows/release.yml`, which builds and attaches
+`main.js`, `manifest.json`, and `styles.css` for BRAT.
 
 ### Hot Reload Setup
 
@@ -181,7 +159,7 @@ To cut a release:
 ## Project Structure
 
 ```
-Obsidian_Multifolder/
+obsidian-multifolder/
 ├── .editorconfig           # Editor configuration
 ├── .eslintrc              # ESLint configuration
 ├── .gitignore             # Git ignore rules

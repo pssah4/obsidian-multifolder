@@ -26,16 +26,16 @@ This creates:
 **Option A: Symbolic Link (Recommended)**
 ```bash
 # macOS/Linux
-ln -s "$(pwd)" "/path/to/your/vault/.obsidian/plugins/obsidian-multifolder"
+ln -s "$(pwd)" "/path/to/your/vault/.obsidian/plugins/multifolder"
 
 # Windows (PowerShell as Admin)
-New-Item -ItemType SymbolicLink -Path "C:\path\to\vault\.obsidian\plugins\obsidian-multifolder" -Target "$(Get-Location)"
+New-Item -ItemType SymbolicLink -Path "C:\path\to\vault\.obsidian\plugins\multifolder" -Target "$(Get-Location)"
 ```
 
 **Option B: Manual Copy**
 ```bash
 # Copy files to your vault's plugins directory
-cp main.js manifest.json styles.css "/path/to/vault/.obsidian/plugins/obsidian-multifolder/"
+cp main.js manifest.json styles.css "/path/to/vault/.obsidian/plugins/multifolder/"
 ```
 
 ### 4. Enable in Obsidian (1 minute)
@@ -43,7 +43,7 @@ cp main.js manifest.json styles.css "/path/to/vault/.obsidian/plugins/obsidian-m
 1. Open Obsidian
 2. Go to: **Settings → Community Plugins**
 3. Turn off "Restricted mode" (if enabled)
-4. Click "Browse" → Find "Multifolder" in your local plugins
+4. Find "Multifolder" in the installed plugins list
 5. Click **"Enable"**
 
 ### 5. Start Developing! (Optional)

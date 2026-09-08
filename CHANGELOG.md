@@ -1,23 +1,31 @@
 # Changelog
 
-All notable changes to Folder Bridge will be documented in this file.
+Changes to Multifolder are documented here. Entries before 2.16.0 retain the history of Folder Bridge.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.16.1] - 2026-09-08
+
 ### Changed
 
 - **Renamed to Multifolder.** The plugin id changed from `folderbridge` to `multifolder`,
-  which makes this a separate plugin as far as Obsidian is concerned: the folder under
-  `.obsidian/plugins/` has to be renamed and settings do not carry over automatically.
+  which makes this a separate plugin as far as Obsidian is concerned: install Multifolder via BRAT and disable Folder Bridge before enabling it.
+  Settings do not carry over automatically; export/import mount definitions to migrate.
   Class names, CSS classes and the session-storage namespace follow the new name.
-- **Attribution made explicit.** This project is a fork of
+- **Attribution made explicit.** This project is a fork and further development of
   [Folder Bridge](https://github.com/tescolopio/Obsidian_FolderBridge) by Tim Escolopio.
   The README says so at the top, `LICENSE` carries both copyright notices as MIT requires,
   and the settings panel links to the original author rather than implying this is his work.
   The "buy me a coffee" button still points at him.
+
+### Installation
+
+- In BRAT, add `https://github.com/pssah4/obsidian-multifolder` and enable Multifolder.
+- Release assets include `main.js`, `manifest.json`, and `styles.css`.
+- Includes the security fixes documented under 2.16.0 below.
 
 ## [2.16.0] - 2026-09-04
 

@@ -1,6 +1,6 @@
 {
     "name": "multifolder",
-    "version": "2.16.0",
+    "version": "2.16.1",
     "description": "Adds external folders to your vault as seamless, native-feeling directories. Creates virtual mount points that map real filesystem paths into the vault.",
     "main": "main.js",
     "scripts": {

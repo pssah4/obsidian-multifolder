@@ -73,34 +73,21 @@ Each bullet must be specific enough for a user to understand what changed and wh
 
 ### 2b. Run the version bump
 
-Stage the changelog, then run `npm version`. The `version` lifecycle hook updates `manifest.json` and `versions.json` automatically. `.npmrc` is configured with `tag-version-prefix=` so the git tag is created **without a `v` prefix** — this is required for the GitHub Actions release workflow to fire.
+Run `npm version X.Y.Z --no-git-tag-version`. The version hook updates
+`manifest.json` and `versions.json`; npm also updates `package.json` and `package-lock.json`.
+Run `npm run validate`, review and commit the changed files individually.
+
+### 2c. Merge and publish
+
+Merge the release branch into `dev`, then merge `dev` into `main`. Push both branches.
+Create the tag on the merged `main` commit and push only that tag:
 
 ```sh
-# Stage your changelog entry first
-git add CHANGELOG.md
-
-# For a patch release (bug fixes only):
-npm version patch
-
-# For a minor release (new features, backwards-compatible):
-npm version minor
-
-# For a major release (breaking changes):
-npm version major
+git tag X.Y.Z
+git push origin X.Y.Z
 ```
 
-`npm version` will:
-1. Bump `package.json`, `manifest.json`, `versions.json`
-2. Commit all staged files with message `Release X.Y.Z`
-3. Create git tag `X.Y.Z` (**no `v` prefix** — critical for the release workflow)
-
-> ⚠️ **Never** run `npm version --no-git-tag-version` and manually `git tag vX.Y.Z`. The `v` prefix breaks the `release.yml` trigger pattern `[0-9]*.[0-9]*.[0-9]*`, so the GitHub release with assets will never be created.
-
-### 2c. Push the commit and tag
-
-```sh
-git push && git push origin X.Y.Z
-```
+Tags must match `manifest.json` exactly, without a `v` prefix.
 
 The `release.yml` GitHub Actions workflow triggers automatically on the `X.Y.Z` tag. It will:
 1. Install deps, run tests, build `main.js`
@@ -164,7 +151,7 @@ This only needs to be done once (initial submission). Subsequent releases only r
 {
   "id": "multifolder",
   "name": "Multifolder",
-  "author": "Timmothy Escolopio",
+  "author": "Sebastian Hanke",
   "description": "Adds external folders to your vault as seamless, native-feeling directories. Supports local filesystem, WebDAV, S3/Backblaze B2, and SFTP mounts.",
   "repo": "pssah4/obsidian-multifolder",
   "branch": "main"

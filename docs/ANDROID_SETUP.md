@@ -52,7 +52,9 @@ Use the URL your server admin provides. It must start with `http://` or `https:/
 
 ## Step 2 — Install Multifolder
 
-Settings → **Community Plugins** → Browse → search **Multifolder** → Install → Enable
+Install and enable **BRAT** from Community Plugins. In BRAT, add
+`https://github.com/pssah4/obsidian-multifolder`, then enable **Multifolder**.
+See the [installation instructions](../README.md#installation).
 
 ---
 

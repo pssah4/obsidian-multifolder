@@ -17,8 +17,8 @@ Thank you for your interest in contributing to Multifolder! This document provid
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/Obsidian_Multifolder.git
-   cd Obsidian_Multifolder
+   git clone https://github.com/YOUR_USERNAME/obsidian-multifolder.git
+   cd obsidian-multifolder
    ```
 3. **Install dependencies**:
    ```bash
@@ -195,7 +195,7 @@ All submissions require review:
 ## 🎨 Project Structure
 
 ```
-Obsidian_Multifolder/
+obsidian-multifolder/
 ├── .github/              # GitHub templates and workflows
 ├── .vscode/              # VS Code configuration
 ├── main.ts               # Main plugin code
